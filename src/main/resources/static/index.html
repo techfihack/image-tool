@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Jun Yin Image Porsche Tool</title>
+
+    <!-- jQuery from CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <!-- Bootstrap CSS from CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+
+        h2 {
+            background: linear-gradient(to right, #ff6b6b, #ffa07a);
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .row {
+            margin-top:5px;
+        }
+        .my-container {
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .form-label {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+        }
+        .submit-button {
+            background-color: #28a745;
+            color: #fff;
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .submit-button:hover {
+            background-color: #218838;
+        }
+        #compressQuality {
+            width: 100%;
+            appearance: none;
+            margin-top:5px;
+            margin-bottom:5px;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            outline: none;
+            padding: 5px;
+            transition: background-color 0.3s ease;
+        }
+        #compressQuality::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            cursor: pointer;
+        }
+        #compressQuality::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            cursor: pointer;
+        }
+        #rangeValue {
+            display: inline-block;
+            font-size: 18px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: 1px solid #4CAF50;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #result {
+            margin-top: 20px;
+            max-width: 100%; /* Set a maximum width for the result div */
+            overflow: hidden; /* Hide any overflow content */
+            width: auto;
+        }
+
+        #result img {
+            max-width: 100%; /* Set a maximum width for the image */
+            height: auto; /* Allow the height to adjust proportionally */
+            display: block; /* Remove extra space below inline elements */
+            margin: 0 auto; /* Center the image within its container */
+        }
+
+    </style>
+
+</head>
+<body>
+<div class="my-container" style="margin-top: 50px">
+
+    <h2>Image Conversion</h2>
+
+    <form class="form-inline" action="/api/upload" method="post" enctype="multipart/form-data">
+
+        <!-- Format -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label class="form-label" for="imageFormats">Format : </label>
+                    <select class="form-control" id="imageFormats"></select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resize -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label" for="height">Height : </label>
+                    <input id="height" class="form-control" type="number" />
+                </div>
+            </div>
+            <!--
+            <div class="col-md-6">
+                <div class="form-group">
+                    <span  style="color: darkred; font-weight: bold; font-family: 'Arial',sans-serif;">
+                        *** Width will follow image aspect ratio ***
+                    </span>
+                </div>
+            </div>
+            -->
+        </div>
+
+        <!-- Compress Ratio -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="form-group">
+                    <label class="form-label" for="compressQuality">Compress Ratio (%) : </label>
+                    <span id="rangeValue">50%</span>
+                    <input id="compressQuality" type="range" min="1" max="100" step="1" value="50">
+                </div>
+            </div>
+        </div>
+
+        <!-- Files -->
+        <div class="row" >
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label class="form-label" for="files">Images : </label>
+                    <input class="form-control" type="file" id="files" name="files" multiple/>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <button class="btn btn-primary submit-button" type="button" onclick="convertImage()" style="margin-top:10px">Convert</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div id="result" ></div>
+
+    <div id="downloadDiv" ></div>
+</div>
+
+
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Document is ready
+
+        // Add an event listener to the range input
+        document.getElementById('compressQuality').addEventListener('input', function() {
+            // Update the value in the span element
+            document.getElementById('rangeValue').innerText = this.value + "%";
+        });
+
+        // Fetch data from /api/image/format using the Fetch API
+        fetch('/pip/image/formats')
+            .then(response => response.json())
+            .then(data => {
+                // Populate the select element with options
+                const selectElement = document.getElementById('imageFormats');
+
+                // Clear existing options
+                selectElement.innerHTML = '';
+
+                // Append options from the fetched data
+                data.forEach(format => {
+                    const option = document.createElement('option');
+                    option.value = format;
+                    option.text = format;
+                    selectElement.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    });
+
+
+    function convertImage() {
+        // Get form values
+        const format = document.getElementById('imageFormats').value;
+        //const width = document.getElementById('width').value;
+        const height = document.getElementById('height').value;
+        const compressQuality = document.getElementById('compressQuality').value;
+        const filesInput = document.getElementById('files');
+
+        // Create a FormData object to send form data
+        const formData = new FormData();
+        formData.append('format', format);
+        //formData.append('width', width);
+        formData.append('height', height);
+        formData.append('compressQuality', compressQuality);
+
+        // Append files to FormData
+        for (const file of filesInput.files) {
+            formData.append('files', file);
+        }
+
+        // Determine which API to call based on the number of files selected
+        filesInput.files.length > 1 ? multiConversion(formData) : singleConversion(formData);
+    }
+
+    function singleConversion(formData){
+
+        // Make a request to /api/image/upload
+        fetch('/pip/image/uploadSingle', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                // Check if the request was successful
+                if (!response.ok) {
+                    alert('Image conversion failed');
+                }
+                // Return the blob (binary) data
+                return response.blob();
+            })
+            .then(blobData => {
+                // Create a data URL from the blob data
+                const imageUrl = URL.createObjectURL(blobData);
+
+                // Display the resulting image in the "result" div
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = ''; // Clear previous content
+
+                // Create an img element and set its source to the data URL of the resulting image
+                const img = document.createElement('img');
+                img.src = imageUrl;
+
+                // Create a link element for downloading the image
+                const downloadLink = document.createElement('a');
+                downloadLink.href = imageUrl;
+                downloadLink.download = 'processed-image.webp'; // You can customize the default filename
+
+                // Attach a double-click event listener to the image
+                img.addEventListener('dblclick', function() {
+                    // Append the link to the body
+                    document.body.appendChild(downloadLink);
+
+                    // Trigger a click on the link to initiate the download
+                    downloadLink.click();
+
+                    // Remove the link from the body
+                    document.body.removeChild(downloadLink);
+                });
+
+                resultDiv.appendChild(img);
+            })
+            .catch(error => alert('Error converting image:' + error));
+    }
+
+    function multiConversion(formData){
+
+        // Make a request to /api/image/upload
+        fetch('/pip/image/uploadMulti', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                // Check if the request was successful
+                if (!response.ok) {
+                    alert('Image conversion failed');
+                }
+                // Return the blob (binary) data
+                return response.arrayBuffer();
+            })
+            .then(data => {
+                if (data instanceof ArrayBuffer) {
+                    // Handle zip file response
+                    // Create a Blob from the ArrayBuffer and initiate download
+                    const blob = new Blob([data], { type: 'application/zip' });
+
+                    // Display the resulting image in the "result" div
+                    const downloadDiv = document.getElementById('downloadDiv');
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = URL.createObjectURL(blob);
+                    downloadLink.download = 'processed_images.zip';
+                    downloadDiv.appendChild(downloadLink);
+                    downloadLink.click();
+                    downloadDiv.removeChild(downloadLink);
+                }})
+            .catch(error => alert('Error converting image:' + error));
+    }
+
+
+</script>
+
+</body>
+</html>
