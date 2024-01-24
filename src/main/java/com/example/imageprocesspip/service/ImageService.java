@@ -74,7 +74,7 @@ public class ImageService {
 
             ByteArrayInputStream streamProcessedImageData = new ByteArrayInputStream(processedImageData);
 
-            System.out.println("Conversion to WebP image successful!");
+            // System.out.println("Conversion to WebP image successful!");
 
             return new ProcessedImage(newFileName, processedImageData);
 
@@ -113,7 +113,7 @@ public class ImageService {
         // Define the regular expression pattern
         Pattern pattern = Pattern.compile("^(.+?)\\.[^.]+$");
 
-        System.out.println("Original filename is " + originalFileName);
+        // System.out.println("Original filename is " + originalFileName);
 
         // Create a matcher with the input string
         Matcher matcher = pattern.matcher(originalFileName);
@@ -127,7 +127,7 @@ public class ImageService {
         }
 
         String newFileName = fileNameExtract + fileType;
-        System.out.println("New filename is " + newFileName);
+        // System.out.println("New filename is " + newFileName);
 
         return newFileName;
     }

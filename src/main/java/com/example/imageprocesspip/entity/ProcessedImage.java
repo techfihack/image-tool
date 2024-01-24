@@ -4,6 +4,7 @@ public class ProcessedImage {
 
     String fileName;
     byte[] fileImage;
+    private String taskUUID;
 
     public String getFileName() {
         return fileName;
@@ -16,6 +17,15 @@ public class ProcessedImage {
     public byte[] getFileImage() {
         return fileImage;
     }
+
+    public String getTaskUUID() {
+        return taskUUID;
+    }
+
+    public void setTaskUUID(String taskUUID) {
+        this.taskUUID = taskUUID;
+    }
+
 
     public void setFileImage(byte[] fileImage) {
         this.fileImage = fileImage;

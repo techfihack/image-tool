@@ -126,14 +126,27 @@
             </div>
         </div>
 
-        <!-- Resize -->
-        <div class="row">
-            <div class="col-md-6">
+        <!-- Files -->
+        <div class="row" >
+            <div class="col-md-12">
                 <div class="form-group">
-                    <label class="form-label" for="height">Height : </label>
-                    <input id="height" class="form-control" type="number" />
+                    <label class="form-label" for="files">Images : </label>
+                    <input class="form-control" type="file" id="files" name="files" multiple/>
                 </div>
             </div>
+        </div>
+
+        <!-- Resize Height -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group" id="height-div">
+                    <!--
+                   <label class="form-label"> Heights </label>
+                   <input id="height" name="heights" class="form-control" type="number" />
+                    -->
+                </div>
+            </div>
+
             <!--
             <div class="col-md-6">
                 <div class="form-group">
@@ -152,16 +165,6 @@
                     <label class="form-label" for="compressQuality">Compress Ratio (%) : </label>
                     <span id="rangeValue">50%</span>
                     <input id="compressQuality" type="range" min="1" max="100" step="1" value="50">
-                </div>
-            </div>
-        </div>
-
-        <!-- Files -->
-        <div class="row" >
-            <div class="col-md-12">
-                <div class="form-group">
-                    <label class="form-label" for="files">Images : </label>
-                    <input class="form-control" type="file" id="files" name="files" multiple/>
                 </div>
             </div>
         </div>
@@ -193,6 +196,39 @@
             document.getElementById('rangeValue').innerText = this.value + "%";
         });
 
+        document.getElementById('files').addEventListener('change', function(event) {
+            // Get the selected files
+            const files = event.target.files;
+
+            // Clear previously generated inputs
+            document.getElementById('height-div').innerHTML = '';
+
+            // Generate inputs based on the number of selected files
+            for (let i = 0; i < files.length; i++) {
+
+                const label = document.createElement('label');
+                label.className = 'form-label';
+                label.textContent = 'Height for image (' + files[i].name + ')';
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'form-control';
+                input.name = 'heights[]';
+
+                // Create an Image object to get the original height
+                const img = new Image();
+                img.src = URL.createObjectURL(files[i]);
+                img.onload = function() {
+                    // Set the placeholder to the original height
+                    input.placeholder =  img.naturalHeight + ' pixels';
+                    input.value = img.naturalHeight;
+                };
+
+                document.getElementById('height-div').appendChild(label);
+                document.getElementById('height-div').appendChild(input);
+            }
+        });
+
         // Fetch data from /api/image/format using the Fetch API
         fetch('/pip/image/formats')
             .then(response => response.json())
@@ -214,12 +250,11 @@
             .catch(error => console.error('Error fetching data:', error));
     });
 
-
     function convertImage() {
         // Get form values
         const format = document.getElementById('imageFormats').value;
-        //const width = document.getElementById('width').value;
-        const height = document.getElementById('height').value;
+        // const width = document.getElementById('width').value;
+        // const height = document.getElementById('height').value;
         const compressQuality = document.getElementById('compressQuality').value;
         const filesInput = document.getElementById('files');
 
@@ -227,12 +262,21 @@
         const formData = new FormData();
         formData.append('format', format);
         //formData.append('width', width);
-        formData.append('height', height);
+        //formData.append('height', height);
         formData.append('compressQuality', compressQuality);
 
         // Append files to FormData
         for (const file of filesInput.files) {
             formData.append('files', file);
+        }
+
+        // Get all elements with the name 'heights[]'
+        const heightInputs = document.getElementsByName('heights[]');
+
+        // Loop through the NodeList and append values to FormData
+        for (let i = 0; i < heightInputs.length; i++) {
+            const height = heightInputs[i].value;
+            formData.append('heights[]', height);
         }
 
         // Determine which API to call based on the number of files selected
@@ -291,7 +335,7 @@
     function multiConversion(formData){
 
         // Make a request to /api/image/upload
-        fetch('/pip/image/uploadMulti', {
+        fetch('/pip/image/thread/uploadMulti', {
             method: 'POST',
             body: formData
         })
