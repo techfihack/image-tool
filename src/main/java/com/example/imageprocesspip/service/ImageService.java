@@ -1,8 +1,13 @@
 package com.example.imageprocesspip.service;
 
+import com.example.imageprocesspip.ImageUtils;
+import com.example.imageprocesspip.dao.RepositoryDao;
+import com.example.imageprocesspip.entity.Image;
 import com.example.imageprocesspip.entity.ProcessedImage;
 import com.luciad.imageio.webp.WebPWriteParam;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -16,14 +21,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.SQLException;
+import java.util.*;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Service
 public class ImageService {
+
+
+    @Autowired
+    private RepositoryDao repositoryDao;
+
 
     public ProcessedImage convertImgToWebp(BufferedImage originalImage, String originalFilename, Integer targetHeight, Integer compressQuality){
 
@@ -104,7 +117,6 @@ public class ImageService {
         return zipByteArrayOutputStream.toByteArray();
     }
 
-
     private static String changeFileName(String originalFileName){
 
         String fileType = ".webp";
@@ -131,4 +143,72 @@ public class ImageService {
 
         return newFileName;
     }
+
+
+    @Transactional
+    public void saveImageAndQuestion(String filename, BufferedImage image, HashMap<Integer, List<String>> sectionImageLabelMap, int pieces, int challengeType) throws IOException, SQLException {
+        // Slice the image into pieces
+        BufferedImage[] imageSlices = ImageUtils.sliceImagePieces(image, pieces);
+        String baseName = filename.substring(0, filename.lastIndexOf('.'));
+        String fileType = filename.substring(filename.lastIndexOf('.') + 1);
+
+        // Generate a random UUID , as groupID for its pieces, also ID for the original image itself
+        String originalImageUuid = UUID.randomUUID().toString().replace("-", "");
+
+        // Save the original image to the database
+        byte[] originalImageData = ImageUtils.convertBufferedImageToByteArray(image,fileType.replace(".", ""));
+        Image originalImage = new Image()
+                .setImageId(originalImageUuid)
+                .setImageName(filename)
+                .setImageData(originalImageData)
+                .setSection(-1)
+                .setGroupId(originalImageUuid)
+                .setIsOriginal(1);
+        repositoryDao.saveImages(originalImage);
+
+        // Iterate over each image slice
+        for (int i = 0; i < imageSlices.length; i++) {
+            // Generate a UUID for each image slice
+            String imageIdString = UUID.randomUUID().toString().replace("-", "");
+
+            // Set the filename for each slice
+            String sliceFilename = baseName + "_section_" + (i + 1) + "." + fileType;
+
+            // Convert the slice to a byte array
+            byte[] imageData = ImageUtils.convertBufferedImageToByteArray(imageSlices[i],fileType.replace(".", ""));
+
+            Image imagePieces = new Image()
+                    .setImageId(imageIdString)
+                    .setImageName(sliceFilename)
+                    .setImageData(imageData)
+                    .setSection(i + 1)
+                    .setGroupId(originalImageUuid)
+                    .setIsOriginal(0);
+
+            // Save the image slice to the database
+            repositoryDao.saveImages(imagePieces);
+
+            // Get labels for the current section, if there are any
+            List<String> labelList = sectionImageLabelMap.getOrDefault(i, new ArrayList<>());
+
+            // Save labels to the database and create relationships in image_labels table
+            for (String label : labelList) {
+                String labelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(label); // This method saves label if it's new and returns its UUID
+                repositoryDao.saveImageLabelRelationToDatabase(imageIdString, labelIdString); // This method creates an entry in the image_labels join table
+            }
+        }
+
+        // After saving image and labels, now create a question entry for each unique label
+        for (String label : getAllUniqueLabels(sectionImageLabelMap)) {
+            String labelIdString = repositoryDao.getLabelIdFromDatabase(label); // This method retrieves the UUID of the label
+            repositoryDao.saveQuestionToDatabase(labelIdString,challengeType); // This method saves the question to the questions table
+        }
+    }
+
+    public Set<String> getAllUniqueLabels(Map<Integer, List<String>> sectionImageLabelMap) {
+        return sectionImageLabelMap.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toSet());
+    }
+
 }

@@ -1,4 +1,4 @@
-package com.example.imageprocesspip;
+package com.example.imageprocesspip.enums;
 
 import java.util.Arrays;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.example.imageprocesspip;
+package com.example.imageprocesspip.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
