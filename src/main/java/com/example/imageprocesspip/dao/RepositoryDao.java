@@ -2,9 +2,11 @@ package com.example.imageprocesspip.dao;
 
 import com.example.imageprocesspip.entity.Image;
 import com.example.imageprocesspip.entity.Question;
+import com.example.imageprocesspip.mapper.QuestionRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -17,11 +19,11 @@ public class RepositoryDao {
     }
 
     public void saveImages(Image image) {
-        String sql = "INSERT INTO images (id, image_name, image_data, section, group_id, is_original) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO images (id, image_name, image_path, section, group_id, is_original) VALUES (?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql,
                 image.getImageId(),
                 image.getImageName(),
-                image.getImageData(),
+                image.getImagePath(),
                 image.getSection(),
                 image.getGroupId(),
                 image.getIsOriginal()
@@ -40,22 +42,25 @@ public class RepositoryDao {
 
     // Method to insert a label into the database if it doesn't already exist
     public String saveLabelToDatabaseIfNotExists(String label) {
-        // First, check if the label already exists
-        String labelId = jdbcTemplate.queryForObject(
-                "SELECT id FROM labels WHERE label_name = ?",
+        String selectSql = "SELECT id FROM labels WHERE label_name = ?";
+        List<String> labelIds = jdbcTemplate.query(
+                selectSql,
                 new Object[]{label},
-                String.class
+                (rs, rowNum) -> rs.getString("id")
         );
 
-        // If the label doesn't exist, insert it and return the new ID
-        if (labelId == null) {
-            labelId = UUID.randomUUID().toString().replace("-", "");
+        // If labelIds is empty, no label was found, so insert a new one.
+        if (labelIds.isEmpty()) {
+            String labelId = UUID.randomUUID().toString().replace("-", "");
             jdbcTemplate.update(
                     "INSERT INTO labels (id, label_name) VALUES (?, ?)",
                     labelId, label
             );
+            return labelId;
+        } else {
+            // Return the existing label ID
+            return labelIds.get(0);
         }
-        return labelId;
     }
 
 
@@ -82,6 +87,11 @@ public class RepositoryDao {
                 challengeType,
                 labelId
         );
+    }
+
+    public Question getRandomQuestion() {
+        String sql = "SELECT id, challenge_type, label_id FROM questions ORDER BY RAND() LIMIT 1";
+        return jdbcTemplate.queryForObject(sql, new QuestionRowMapper());
     }
 
 

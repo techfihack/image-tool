@@ -13,7 +13,7 @@ public class Image {
 
     private String imageId;
     private String imageName;
-    private byte[] imageData;
+    private String imagePath;
     private int section;
     private String groupId;     // Added to group slices with their original image
     private int isOriginal;     // boolean should be mapped to int if the database column is TINYINT or similar

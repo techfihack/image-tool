@@ -23,7 +23,7 @@ public class ImageUtils {
         int cols = rows;
         int sliceWidth = originalImage.getWidth() / cols;
         int sliceHeight = originalImage.getHeight() / rows;
-        BufferedImage[] slices = new BufferedImage[pieces];
+        BufferedImage[] slices = new BufferedImage[rows*cols];
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
@@ -35,36 +35,36 @@ public class ImageUtils {
         return slices;
     }
 
-    public static byte[] convertBufferedImageToByteArray(BufferedImage image, String formatName) throws IOException {
+    public static byte[] convertBufferedImageToByteArray(BufferedImage image, String formatType) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ImageIO.write(image, formatName, outputStream);
+        ImageIO.write(image, formatType, outputStream);
         return outputStream.toByteArray();
     }
 
     public static void main(String[] args) throws IOException {
 
-        File imageFile = new File("C:\\Users\\obest\\OneDrive\\Pictures\\cat 6.jpg");
+        File imageFile = new File("C:\\Users\\obest\\OneDrive\\Pictures\\cat 11.jpg");
         BufferedImage catImage = ImageIO.read(imageFile);
-        BufferedImage[] images = sliceImagePieces(catImage,3);
-
-        // Get an ImageWriter for the "image/webp" MIME type
-        ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-
-        // Create a WebPWriteParam and configure it for lossless compression
-        WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
-
-        // Notify encoder to consider WebPWriteParams
-        writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        BufferedImage[] images = sliceImagePieces(catImage,9);
 
         System.out.println("images length " + images.length);
 
         for( int i = 0 ; i < images.length ; i++){
 
-            String filename = "slices_" + (i+1);
+            File outputfile = new File("slices_" + (i + 1) + ".jpg");
+            ImageIO.write(images[i], "jpg", outputfile);
+            System.out.println("write finish part " + i);
+
+            /*
+            String filename = "slices_" + (i+1) + ".webp";
             File compressedFile = new File(filename);
             writer.setOutput(new FileImageOutputStream(compressedFile));
             writer.write(null, new IIOImage(images[i], null, null), writeParam);
+            System.out.println("write finish part " + i);
+            */
         }
+
+        System.out.println("write all images finish");
 
     }
 }

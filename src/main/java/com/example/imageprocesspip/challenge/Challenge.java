@@ -45,8 +45,7 @@ public interface Challenge {
     Match the user input with the image labelling.
     If correct, will return captcha resolved
     If error, will return captcha failed and user is allowed to retry again within 3 minutes timeframe.
-    Challenge is stored with { sessionId : challengeId } in redis and have 3 minutes expire time.
-    User have to refresh a new challenge if challenge is expired.
+n
     */
 
 

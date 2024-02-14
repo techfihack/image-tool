@@ -1,6 +1,7 @@
 package com.example.imageprocesspip.challenge;
 
 import com.example.imageprocesspip.service.ImageService;
+import com.example.imageprocesspip.service.ImageStorageService;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,12 +20,15 @@ public class SingleTileImageChallenge implements Challenge {
     private int pieces;
     private ImageService imageService;
 
-    public SingleTileImageChallenge(MultipartFile imageFile, int challengeType, MultiValueMap<String, String> sectionLabels, int pieces, ImageService imageService) {
+    private ImageStorageService imageStorageService;
+
+    public SingleTileImageChallenge(MultipartFile imageFile, int challengeType, MultiValueMap<String, String> sectionLabels, int pieces, ImageService imageService, ImageStorageService imageStorageService) {
         this.imageFile = imageFile;
         this.challengeType = challengeType;
         this.sectionLabels = sectionLabels;
         this.pieces = pieces;
         this.imageService = imageService;
+        this.imageStorageService = imageStorageService;
     }
 
     @Override
@@ -38,16 +42,20 @@ public class SingleTileImageChallenge implements Challenge {
         // Extract values from params and construct your HashMap
         HashMap<Integer, List<String>> sectionImageLabelMap = new HashMap<>();
         for (String key : sectionLabels.keySet()) {
-            if (key.startsWith("section")) {
-                Integer sectionSequence = Integer.valueOf(key.substring("section".length()));
+            if (key.startsWith("sectionLabels[")) {
+                // Extract the section number
+                String sectionNumberStr = key.substring("sectionLabels[".length(), key.indexOf(']'));
+                Integer sectionNumber = Integer.valueOf(sectionNumberStr);
+
+                // Get the list of labels for this section
                 List<String> labels = sectionLabels.get(key);
-                sectionImageLabelMap.put(sectionSequence, labels);
+                sectionImageLabelMap.put(sectionNumber, labels);
             }
         }
 
         try {
             BufferedImage originalImage = ImageIO.read(imageFile.getInputStream());
-            imageService.saveImageAndQuestion(Objects.requireNonNull(imageFile.getOriginalFilename()), originalImage, sectionImageLabelMap, pieces, challengeType);
+            imageService.saveImageAndQuestion(Objects.requireNonNull(imageFile.getOriginalFilename()), originalImage, sectionImageLabelMap, pieces, challengeType, imageStorageService);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -5,6 +5,8 @@ import com.example.imageprocesspip.dao.RepositoryDao;
 import com.example.imageprocesspip.entity.Image;
 import com.example.imageprocesspip.entity.ProcessedImage;
 import com.luciad.imageio.webp.WebPWriteParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +24,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.SQLException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -33,10 +35,10 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ImageService {
 
-
     @Autowired
     private RepositoryDao repositoryDao;
 
+    private static final Logger logger = LoggerFactory.getLogger(ImageService.class);
 
     public ProcessedImage convertImgToWebp(BufferedImage originalImage, String originalFilename, Integer targetHeight, Integer compressQuality){
 
@@ -87,8 +89,6 @@ public class ImageService {
 
             ByteArrayInputStream streamProcessedImageData = new ByteArrayInputStream(processedImageData);
 
-            // System.out.println("Conversion to WebP image successful!");
-
             return new ProcessedImage(newFileName, processedImageData);
 
         } catch (IOException | UnsupportedOperationException e){
@@ -125,8 +125,6 @@ public class ImageService {
         // Define the regular expression pattern
         Pattern pattern = Pattern.compile("^(.+?)\\.[^.]+$");
 
-        // System.out.println("Original filename is " + originalFileName);
-
         // Create a matcher with the input string
         Matcher matcher = pattern.matcher(originalFileName);
 
@@ -139,14 +137,13 @@ public class ImageService {
         }
 
         String newFileName = fileNameExtract + fileType;
-        // System.out.println("New filename is " + newFileName);
 
         return newFileName;
     }
 
 
     @Transactional
-    public void saveImageAndQuestion(String filename, BufferedImage image, HashMap<Integer, List<String>> sectionImageLabelMap, int pieces, int challengeType) throws IOException, SQLException {
+    public void saveImageAndQuestion(String filename, BufferedImage image, HashMap<Integer, List<String>> sectionImageLabelMap, int pieces, int challengeType, ImageStorageService imageStorageService) throws IOException, SQLException {
         // Slice the image into pieces
         BufferedImage[] imageSlices = ImageUtils.sliceImagePieces(image, pieces);
         String baseName = filename.substring(0, filename.lastIndexOf('.'));
@@ -155,16 +152,23 @@ public class ImageService {
         // Generate a random UUID , as groupID for its pieces, also ID for the original image itself
         String originalImageUuid = UUID.randomUUID().toString().replace("-", "");
 
-        // Save the original image to the database
-        byte[] originalImageData = ImageUtils.convertBufferedImageToByteArray(image,fileType.replace(".", ""));
-        Image originalImage = new Image()
+        // Save image data and get the path
+        String directoryPath = "C:\\Users\\obest\\IdeaProjects\\ImageProcessPip\\testcase\\";
+        String filePath = directoryPath+filename;
+        File outputfile = new File(filePath);
+        ImageIO.write(image, "jpg", outputfile);
+        logger.info("save original image successful!");
+
+        Image original = new Image()
                 .setImageId(originalImageUuid)
                 .setImageName(filename)
-                .setImageData(originalImageData)
+                .setImagePath(filePath)
                 .setSection(-1)
                 .setGroupId(originalImageUuid)
                 .setIsOriginal(1);
-        repositoryDao.saveImages(originalImage);
+
+        // Save the original image to the database
+        repositoryDao.saveImages(original);
 
         // Iterate over each image slice
         for (int i = 0; i < imageSlices.length; i++) {
@@ -174,19 +178,22 @@ public class ImageService {
             // Set the filename for each slice
             String sliceFilename = baseName + "_section_" + (i + 1) + "." + fileType;
 
-            // Convert the slice to a byte array
-            byte[] imageData = ImageUtils.convertBufferedImageToByteArray(imageSlices[i],fileType.replace(".", ""));
+            String slicePath = directoryPath+sliceFilename;
 
-            Image imagePieces = new Image()
+            File outputSliceFile = new File(slicePath);
+            ImageIO.write(imageSlices[i], "jpg", outputSliceFile);
+            logger.info("save slice images successful!");
+
+            Image imageSlice = new Image()
                     .setImageId(imageIdString)
                     .setImageName(sliceFilename)
-                    .setImageData(imageData)
+                    .setImagePath(slicePath)
                     .setSection(i + 1)
                     .setGroupId(originalImageUuid)
                     .setIsOriginal(0);
 
             // Save the image slice to the database
-            repositoryDao.saveImages(imagePieces);
+            repositoryDao.saveImages(imageSlice);
 
             // Get labels for the current section, if there are any
             List<String> labelList = sectionImageLabelMap.getOrDefault(i, new ArrayList<>());
