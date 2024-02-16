@@ -207,7 +207,7 @@ public class ImageService {
 
         // After saving image and labels, now create a question entry for each unique label
         for (String label : getAllUniqueLabels(sectionImageLabelMap)) {
-            String labelIdString = repositoryDao.getLabelIdFromDatabase(label); // This method retrieves the UUID of the label
+            String labelIdString = repositoryDao.getLabelIdByName(label); // This method retrieves the UUID of the label
             repositoryDao.saveQuestionToDatabase(labelIdString,challengeType); // This method saves the question to the questions table
         }
     }

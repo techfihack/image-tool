@@ -4,7 +4,11 @@ package com.example.imageprocesspip.challenge;
 public interface Challenge {
     boolean validate(String userInput);
 
+    void saveChallengeAnswer();
+
     void createChallenge();
+
+    String generateQuestionString(String label);
 
 }
 
@@ -18,7 +22,7 @@ public interface Challenge {
     Challenge is stored with { sessionId : challengeId } in redis and have 3 minutes expire time.
     User have to refresh a new challenge if challenge is expired.
 
-
+W
     Challenge 2 : Multiple Tiles Image Selection :
     9 Images selected from 1 full image in system and each of them have custom labelling.
     User have to select multiple slices that label with the custom labelling, based on the questions.

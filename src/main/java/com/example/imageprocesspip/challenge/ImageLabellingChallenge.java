@@ -2,11 +2,13 @@ package com.example.imageprocesspip.challenge;
 
 public class ImageLabellingChallenge implements Challenge {
 
-    private final String imageLabel;
+    private String imageLabel;
 
     public ImageLabellingChallenge(String imageLabel) {
         this.imageLabel = imageLabel;
     }
+
+    public ImageLabellingChallenge() {}
 
     @Override
     public boolean validate(String userInput) {
@@ -15,5 +17,14 @@ public class ImageLabellingChallenge implements Challenge {
 
     @Override
     public void createChallenge() {
+    }
+
+    @Override
+    public void saveChallengeAnswer(){
+    }
+
+    @Override
+    public String generateQuestionString(String label){
+        return "Please enter at least one object that you see in the picture";
     }
 }

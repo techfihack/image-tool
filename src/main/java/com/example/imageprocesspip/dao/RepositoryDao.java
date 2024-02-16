@@ -1,7 +1,12 @@
 package com.example.imageprocesspip.dao;
 
 import com.example.imageprocesspip.entity.Image;
+import com.example.imageprocesspip.entity.ImageLabel;
+import com.example.imageprocesspip.entity.Label;
 import com.example.imageprocesspip.entity.Question;
+import com.example.imageprocesspip.mapper.ImageLabelRowMapper;
+import com.example.imageprocesspip.mapper.ImageRowMapper;
+import com.example.imageprocesspip.mapper.LabelRowMapper;
 import com.example.imageprocesspip.mapper.QuestionRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -72,13 +77,34 @@ public class RepositoryDao {
         );
     }
 
-    public String getLabelIdFromDatabase(String label) {
+    public String getLabelIdByName(String label) {
             return jdbcTemplate.queryForObject(
                     "SELECT id FROM labels WHERE label_name = ?",
                     new Object[]{label},
                     String.class
             );
     }
+
+    public Label getLabelById(String labelId) {
+        String sql = "SELECT id, label_name FROM labels WHERE id = ?";
+        return jdbcTemplate.queryForObject(sql, new Object[]{labelId}, new LabelRowMapper());
+    }
+
+    public List<ImageLabel> getImageLabelsByLabelId(String labelId){
+        String sql = "SELECT * FROM image_labels WHERE label_id = ?";
+        return jdbcTemplate.query(sql, new Object[]{labelId}, new ImageLabelRowMapper());
+    }
+
+    public List<Image>  getImageSlicesGroupById(String imageId){
+        String sql = "select * from images where group_id = ( select group_id from images where id = ? )";
+        return jdbcTemplate.query(sql, new Object[]{imageId}, new ImageRowMapper());
+    }
+
+    public Image getAnswerImageById(String imageId){
+        String sql = "select * from images where id = ? )";
+        return jdbcTemplate.queryForObject(sql, new Object[]{imageId}, new ImageRowMapper());
+    }
+
 
     public void saveQuestionToDatabase(String labelId, int challengeType) {
         jdbcTemplate.update(

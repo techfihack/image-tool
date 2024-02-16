@@ -14,7 +14,7 @@ import java.util.List;
 public class CaptchaChallenge {
 
     private String sessionId;
-    private List<CaptchaImage> captchaImages;
+    private CaptchaImage captchaImages;
     private String questionString;
     private int challengeType;
 

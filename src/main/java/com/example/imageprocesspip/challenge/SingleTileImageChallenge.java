@@ -22,6 +22,8 @@ public class SingleTileImageChallenge implements Challenge {
 
     private ImageStorageService imageStorageService;
 
+    public SingleTileImageChallenge(){}
+
     public SingleTileImageChallenge(MultipartFile imageFile, int challengeType, MultiValueMap<String, String> sectionLabels, int pieces, ImageService imageService, ImageStorageService imageStorageService) {
         this.imageFile = imageFile;
         this.challengeType = challengeType;
@@ -60,4 +62,17 @@ public class SingleTileImageChallenge implements Challenge {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public void saveChallengeAnswer(){
+
+    }
+
+    @Override
+    public String generateQuestionString(String label){
+        return "Please select single image that match the " + label;
+    }
+
+
+
 }

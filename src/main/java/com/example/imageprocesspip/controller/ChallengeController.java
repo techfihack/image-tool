@@ -13,6 +13,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RequestMapping(value = {"/challenge"})
@@ -33,18 +34,25 @@ public class ChallengeController {
         }
         ChallengeType challengeType = ChallengeType.getByValue(challengeTypeInt);
         assert challengeType != null;
-        challengeService.processChallenge(file, challengeType, sectionLabels, pieces);
+        challengeService.createChallenge(file, challengeType, sectionLabels, pieces);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @GetMapping("/request")
-    public CaptchaChallenge requestChallenge(){
+    public CaptchaChallenge requestChallenge() throws IOException {
        CaptchaChallenge captchaChallenge = challengeService.requestRandomChallenge();
        return captchaChallenge;
     }
 
     @PostMapping("/validate")
-    public List<String> validateChallenge(){
-        return null;
+    public ResponseEntity validateChallenge(@RequestParam Integer challengeTypeInt, @RequestParam("sessionId") String sessionId, @RequestParam String userAnswer){
+        if (challengeTypeInt == null) {
+            logger.error("Challenge cannot be null");
+            return new ResponseEntity<>("Challenge cannot be null", HttpStatus.BAD_REQUEST);
+        }
+        ChallengeType challengeType = ChallengeType.getByValue(challengeTypeInt);
+        assert challengeType != null;
+        Boolean result = challengeService.validateChallenge(challengeType, sessionId,userAnswer);
+        return new ResponseEntity(HttpStatus.OK);
     }
 }
