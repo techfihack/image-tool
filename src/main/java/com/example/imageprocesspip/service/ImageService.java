@@ -1,15 +1,12 @@
 package com.example.imageprocesspip.service;
 
-import com.example.imageprocesspip.ImageUtils;
 import com.example.imageprocesspip.dao.RepositoryDao;
-import com.example.imageprocesspip.entity.Image;
 import com.example.imageprocesspip.entity.ProcessedImage;
 import com.luciad.imageio.webp.WebPWriteParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -23,9 +20,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -137,11 +134,11 @@ public class ImageService {
         }
 
         String newFileName = fileNameExtract + fileType;
-
         return newFileName;
     }
 
 
+    /*
     @Transactional
     public void saveImageAndQuestion(String filename, BufferedImage image, HashMap<Integer, List<String>> sectionImageLabelMap, int pieces, int challengeType, ImageStorageService imageStorageService) throws IOException, SQLException {
         // Slice the image into pieces
@@ -210,6 +207,52 @@ public class ImageService {
             String labelIdString = repositoryDao.getLabelIdByName(label); // This method retrieves the UUID of the label
             repositoryDao.saveQuestionToDatabase(labelIdString,challengeType); // This method saves the question to the questions table
         }
+    }
+    */
+
+
+    public String createImageWithTextLabel(String label){
+
+        // Define your text and image parameters
+        int width = 200; // Image width
+        int height = 100; // Image height
+
+        // Create a buffered image and graphics context
+        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = bufferedImage.createGraphics();
+
+        // Set font and color
+        Font font = new Font("Arial", Font.PLAIN, 20);
+        g2d.setFont(font);
+        g2d.setColor(Color.BLACK);
+
+        // Set background color
+        g2d.fillRect(0, 0, width, height);
+        g2d.setColor(Color.WHITE);
+
+        // Draw the text in the center of the image
+        FontMetrics fontMetrics = g2d.getFontMetrics();
+        int x = (width - fontMetrics.stringWidth(label)) / 2;
+        int y = ((height - fontMetrics.getHeight()) / 2) + fontMetrics.getAscent();
+        g2d.drawString(label, x, y);
+
+        // Dispose graphics and flush image
+        g2d.dispose();
+
+        // Define the directory and file path
+        String directoryPath = "C:\\Users\\obest\\IdeaProjects\\ImageProcessPip\\testcase\\";
+        String fileName = "labelImage_" + label + ".png";
+        String filePath = directoryPath + fileName;
+        File outputFile = new File(filePath);
+
+        // Write the BufferedImage to a file
+        try {
+            ImageIO.write(bufferedImage, "png", outputFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Handle exception properly
+        }
+        return filePath;
     }
 
     public Set<String> getAllUniqueLabels(Map<Integer, List<String>> sectionImageLabelMap) {

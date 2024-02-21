@@ -11,6 +11,8 @@ import com.example.imageprocesspip.mapper.QuestionRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -101,8 +103,24 @@ public class RepositoryDao {
     }
 
     public Image getAnswerImageById(String imageId){
-        String sql = "select * from images where id = ? )";
+        String sql = "select * from images where id = ?";
         return jdbcTemplate.queryForObject(sql, new Object[]{imageId}, new ImageRowMapper());
+    }
+
+
+    public List<String> getSameGroupAnswerImages(String labelId, List<String> imageIds){
+
+        // Prepare the SQL query with placeholders for labelId and imageIds
+        String sql = "SELECT image_id FROM image_labels WHERE label_id = ? AND image_id IN (" +
+                String.join(",", Collections.nCopies(imageIds.size(), "?")) + ")";
+
+        // Prepare the parameters for the SQL query
+        List<Object> parameters = new ArrayList<>();
+        parameters.add(labelId);
+        parameters.addAll(imageIds);
+
+        // Execute the query and return the list of image IDs
+        return jdbcTemplate.query(sql, parameters.toArray(), (rs, rowNum) -> rs.getString("image_id"));
     }
 
 

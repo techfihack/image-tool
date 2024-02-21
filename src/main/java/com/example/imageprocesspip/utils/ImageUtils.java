@@ -1,4 +1,4 @@
-package com.example.imageprocesspip;
+package com.example.imageprocesspip.utils;
 
 import com.luciad.imageio.webp.WebPWriteParam;
 import org.springframework.stereotype.Component;

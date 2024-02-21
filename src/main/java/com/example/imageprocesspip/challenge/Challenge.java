@@ -1,10 +1,10 @@
 package com.example.imageprocesspip.challenge;
 
+import org.springframework.data.redis.core.RedisTemplate;
+
 // Interface for Challenge
 public interface Challenge {
-    boolean validate(String userInput);
-
-    void saveChallengeAnswer();
+    boolean validate(String sessionId, String userAnswer, RedisTemplate redisTemplate);
 
     void createChallenge();
 

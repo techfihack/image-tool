@@ -18,4 +18,8 @@ public class CaptchaImage {
 
     private List<String> temporaryIds;
 
+    private String filePath;
+
+    private String temporaryId;
+
 }

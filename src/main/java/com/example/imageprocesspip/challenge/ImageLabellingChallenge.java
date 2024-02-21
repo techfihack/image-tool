@@ -1,5 +1,7 @@
 package com.example.imageprocesspip.challenge;
 
+import org.springframework.data.redis.core.RedisTemplate;
+
 public class ImageLabellingChallenge implements Challenge {
 
     private String imageLabel;
@@ -11,8 +13,8 @@ public class ImageLabellingChallenge implements Challenge {
     public ImageLabellingChallenge() {}
 
     @Override
-    public boolean validate(String userInput) {
-        return imageLabel.equalsIgnoreCase(userInput);
+    public boolean validate(String sessionId, String userAnswer, RedisTemplate redisTemplate) {
+        return false;
     }
 
     @Override
@@ -20,11 +22,10 @@ public class ImageLabellingChallenge implements Challenge {
     }
 
     @Override
-    public void saveChallengeAnswer(){
-    }
-
-    @Override
     public String generateQuestionString(String label){
         return "Please enter at least one object that you see in the picture";
     }
+
+
+
 }
