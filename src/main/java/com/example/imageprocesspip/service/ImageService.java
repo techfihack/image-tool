@@ -21,11 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -253,12 +250,6 @@ public class ImageService {
             // Handle exception properly
         }
         return filePath;
-    }
-
-    public Set<String> getAllUniqueLabels(Map<Integer, List<String>> sectionImageLabelMap) {
-        return sectionImageLabelMap.values().stream()
-                .flatMap(List::stream)
-                .collect(Collectors.toSet());
     }
 
 }

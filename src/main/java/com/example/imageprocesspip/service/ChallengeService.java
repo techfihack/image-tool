@@ -36,26 +36,27 @@ public class ChallengeService {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    public void createChallenge(MultipartFile file, ChallengeType challengeType, MultiValueMap<String, String> sectionLabels, int pieces){
+    public void createChallenge(MultipartFile file, ChallengeType challengeType, MultiValueMap<String, String> sectionLabels, int pieces, String imageLabels){
         switch (challengeType) {
             case SINGLE_TILING -> {
                 SingleTileImageChallenge challenge = new SingleTileImageChallenge(
-                        file, challengeType.getCode(), sectionLabels, pieces, imageService, imageStorageService, repositoryDao
+                        file, challengeType.getCode(), sectionLabels, pieces, imageStorageService, repositoryDao
                 );
                 challenge.createChallenge();
             }
             case MULTI_TILING -> {
                 MultipleTilesImageChallenge challenge = new MultipleTilesImageChallenge(
-                        file, challengeType.getCode(), sectionLabels, pieces, imageService, imageStorageService, repositoryDao
+                        file, challengeType.getCode(), sectionLabels, pieces, imageStorageService, repositoryDao
                 );
                 challenge.createChallenge();
             }
             case IMAGE_TYPING -> {
-                ImageTypingChallenge challenge = new ImageTypingChallenge(challengeType.getCode(),imageService, repositoryDao);
+                ImageTypingChallenge challenge = new ImageTypingChallenge(challengeType.getCode(),imageService, repositoryDao, redisTemplate);
                 challenge.createChallenge();
             }
             case IMAGE_LABELLING -> {
-
+                ImageLabellingChallenge challenge = new ImageLabellingChallenge(file, imageLabels, challengeType.getCode(), imageStorageService, repositoryDao);
+                challenge.createChallenge();
             }
             // Other case statements for different challenge types...
             default -> throw new IllegalArgumentException("Invalid challenge type");
@@ -71,23 +72,74 @@ public class ChallengeService {
 
         switch (challengeType) {
             case SINGLE_TILING -> {
-               SingleTileImageChallenge singleTileImageChallenge = new SingleTileImageChallenge();
+               SingleTileImageChallenge singleTileImageChallenge = new SingleTileImageChallenge(imageStorageService,repositoryDao,redisTemplate);
                String questionString = singleTileImageChallenge.generateQuestionString(label.getLabelName());
                List<ImageLabel> imageLabels = repositoryDao.getImageLabelsByLabelId(question.getLabelId());
-               CaptchaChallenge captchaChallenge = singleTileImageChallenge.getCaptchaChallenge(questionString,imageLabels,challengeType.getCode(),redisTemplate);
+               CaptchaChallenge captchaChallenge = singleTileImageChallenge.getCaptchaChallenge(questionString,imageLabels,challengeType.getCode());
                return captchaChallenge;
             }
             case MULTI_TILING -> {
-                MultipleTilesImageChallenge multipleTilesImageChallenge = new MultipleTilesImageChallenge();
+                MultipleTilesImageChallenge multipleTilesImageChallenge = new MultipleTilesImageChallenge(imageStorageService,repositoryDao,redisTemplate);
                 String questionString = multipleTilesImageChallenge.generateQuestionString(label.getLabelName());
                 List<ImageLabel> imageLabels = repositoryDao.getImageLabelsByLabelId(question.getLabelId());
-                CaptchaChallenge captchaChallenge = multipleTilesImageChallenge.getCaptchaChallenge(label,questionString,imageLabels,challengeType.getCode(),redisTemplate);
+                CaptchaChallenge captchaChallenge = multipleTilesImageChallenge.getCaptchaChallenge(label,questionString,imageLabels,challengeType.getCode());
                 return captchaChallenge;
             }
             case IMAGE_TYPING -> {
-                ImageTypingChallenge imageTypingChallenge = new ImageTypingChallenge();
+                ImageTypingChallenge imageTypingChallenge = new ImageTypingChallenge(challengeType.getCode(), imageService,repositoryDao,redisTemplate);
                 String questionString = imageTypingChallenge.generateQuestionString(label.getLabelName());
-                CaptchaChallenge captchaChallenge = imageTypingChallenge.getCaptchaChallenge(questionString,challengeType.getCode(),redisTemplate);
+                CaptchaChallenge captchaChallenge = imageTypingChallenge.getCaptchaChallenge(questionString);
+                return captchaChallenge;
+            }
+            case IMAGE_LABELLING -> {
+                ImageLabellingChallenge imageLabellingChallenge = new ImageLabellingChallenge(redisTemplate);
+                String questionString = imageLabellingChallenge.generateQuestionString(label.getLabelName());
+                List<ImageLabel> imageLabels = repositoryDao.getImageLabelsByLabelId(question.getLabelId());
+                CaptchaChallenge captchaChallenge = imageLabellingChallenge.getCaptchaChallenge(questionString,imageLabels,challengeType.getCode());
+                return captchaChallenge;
+            }
+
+            default -> throw new IllegalArgumentException("Invalid challenge type");
+        }
+    }
+
+
+    public CaptchaChallenge requestUserChallenge(ChallengeType type) throws IOException {
+
+        // Random challenge type = 0(Single Tiling) from database
+        // Question question = repositoryDao.getRandomQuestion();
+        // Label label = repositoryDao.getLabelById(question.getLabelId());
+        // ChallengeType challengeType = question.getType();
+
+         Question question = repositoryDao.getQuestionByChallengeType(type.getCode());
+         Label label = repositoryDao.getLabelById(question.getLabelId());
+
+        switch (type) {
+            case SINGLE_TILING -> {
+                SingleTileImageChallenge singleTileImageChallenge = new SingleTileImageChallenge(imageStorageService,repositoryDao,redisTemplate);
+                String questionString = singleTileImageChallenge.generateQuestionString(label.getLabelName());
+                List<ImageLabel> imageLabels = repositoryDao.getImageLabelsByLabelId(question.getLabelId());
+                CaptchaChallenge captchaChallenge = singleTileImageChallenge.getCaptchaChallenge(questionString,imageLabels,type.getCode());
+                return captchaChallenge;
+            }
+            case MULTI_TILING -> {
+                MultipleTilesImageChallenge multipleTilesImageChallenge = new MultipleTilesImageChallenge(imageStorageService,repositoryDao,redisTemplate);
+                String questionString = multipleTilesImageChallenge.generateQuestionString(label.getLabelName());
+                List<ImageLabel> imageLabels = repositoryDao.getImageLabelsByLabelId(question.getLabelId());
+                CaptchaChallenge captchaChallenge = multipleTilesImageChallenge.getCaptchaChallenge(label,questionString,imageLabels,type.getCode());
+                return captchaChallenge;
+            }
+            case IMAGE_TYPING -> {
+                ImageTypingChallenge imageTypingChallenge = new ImageTypingChallenge(type.getCode(),imageService,repositoryDao,redisTemplate);
+                String questionString = imageTypingChallenge.generateQuestionString(label.getLabelName());
+                CaptchaChallenge captchaChallenge = imageTypingChallenge.getCaptchaChallenge(questionString);
+                return captchaChallenge;
+            }
+            case IMAGE_LABELLING -> {
+                ImageLabellingChallenge imageLabellingChallenge = new ImageLabellingChallenge(repositoryDao,redisTemplate);
+                String questionString = imageLabellingChallenge.generateQuestionString(label.getLabelName());
+                List<ImageLabel> imageLabels = repositoryDao.getImageLabelsByLabelId(question.getLabelId());
+                CaptchaChallenge captchaChallenge = imageLabellingChallenge.getCaptchaChallenge(questionString,imageLabels,type.getCode());
                 return captchaChallenge;
             }
 
@@ -100,19 +152,24 @@ public class ChallengeService {
         boolean isCorrect;
         switch (type) {
             case SINGLE_TILING -> {
-                SingleTileImageChallenge singleTileImageChallenge = new SingleTileImageChallenge();
-                isCorrect = singleTileImageChallenge.validate(sessionId,userAnswer,redisTemplate);
+                SingleTileImageChallenge singleTileImageChallenge = new SingleTileImageChallenge(redisTemplate);
+                isCorrect = singleTileImageChallenge.validate(sessionId,userAnswer);
                 return isCorrect;
             }
             case MULTI_TILING -> {
-                MultipleTilesImageChallenge multipleTilesImageChallenge = new MultipleTilesImageChallenge();
-                isCorrect = multipleTilesImageChallenge.validate(sessionId,userAnswer,redisTemplate);
+                MultipleTilesImageChallenge multipleTilesImageChallenge = new MultipleTilesImageChallenge(redisTemplate);
+                isCorrect = multipleTilesImageChallenge.validate(sessionId,userAnswer);
                 return isCorrect;
             }
             case IMAGE_TYPING -> {
                 userAnswer = sessionId + "_" + userAnswer;
-                ImageTypingChallenge imageTypingChallenge = new ImageTypingChallenge();
-                isCorrect = imageTypingChallenge.validate(sessionId,userAnswer,redisTemplate);
+                ImageTypingChallenge imageTypingChallenge = new ImageTypingChallenge(redisTemplate);
+                isCorrect = imageTypingChallenge.validate(sessionId,userAnswer);
+                return isCorrect;
+            }
+            case IMAGE_LABELLING -> {
+                ImageLabellingChallenge imageLabellingChallenge = new ImageLabellingChallenge(redisTemplate);
+                isCorrect = imageLabellingChallenge.validate(sessionId,userAnswer);
                 return isCorrect;
             }
 

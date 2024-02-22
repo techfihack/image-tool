@@ -123,6 +123,20 @@ public class RepositoryDao {
         return jdbcTemplate.query(sql, parameters.toArray(), (rs, rowNum) -> rs.getString("image_id"));
     }
 
+    public List<String> getSameImageOtherLabelId(String imageId) {
+        String sql = "SELECT label_id FROM image_labels WHERE image_id = ?";
+        return jdbcTemplate.query(sql, new Object[]{imageId}, (rs, rowNum) -> rs.getString("label_id"));
+    }
+
+    public List<String> getLabelNameInId(List<String> labelIds){
+
+        // Create a comma-separated string of placeholders
+        String sql = "SELECT label_name FROM labels WHERE id IN (" + String.join(",", Collections.nCopies(labelIds.size(), "?")) + ")";
+
+        // Convert ids list to an array of objects
+        Object[] params = labelIds.toArray(new Object[0]);
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("label_name"));
+    }
 
     public void saveQuestionToDatabase(String labelId, int challengeType) {
         jdbcTemplate.update(
@@ -137,6 +151,12 @@ public class RepositoryDao {
         String sql = "SELECT id, challenge_type, label_id FROM questions ORDER BY RAND() LIMIT 1";
         return jdbcTemplate.queryForObject(sql, new QuestionRowMapper());
     }
+
+    public Question getQuestionByChallengeType(int type) {
+        String sql = "SELECT id, challenge_type, label_id FROM questions WHERE challenge_type = ? ORDER BY RAND() LIMIT 1";
+        return jdbcTemplate.queryForObject(sql, new Object[]{type}, new QuestionRowMapper());
+    }
+
 
 
 }

@@ -2,7 +2,6 @@ package com.example.imageprocesspip.challenge;
 
 import com.example.imageprocesspip.dao.RepositoryDao;
 import com.example.imageprocesspip.entity.*;
-import com.example.imageprocesspip.service.ImageService;
 import com.example.imageprocesspip.service.ImageStorageService;
 import com.example.imageprocesspip.utils.ImageUtils;
 import org.slf4j.Logger;
@@ -13,9 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -26,45 +24,54 @@ public class MultipleTilesImageChallenge implements Challenge {
     private int challengeType;
     private MultiValueMap<String, String> sectionLabels;
     private int pieces;
-    private ImageService imageService;
-
     private ImageStorageService imageStorageService;
-
     private RepositoryDao repositoryDao;
+    private RedisTemplate redisTemplate;
 
     private static final Logger logger = LoggerFactory.getLogger(MultipleTilesImageChallenge.class);
 
     // Concrete implementation for Multiple Tiles Image Selection Challenge
-    public MultipleTilesImageChallenge(){}
+    public MultipleTilesImageChallenge(RedisTemplate redisTemplate){
+        this.redisTemplate = redisTemplate;
+    }
 
     public MultipleTilesImageChallenge(MultipartFile imageFile, int challengeType, MultiValueMap<String, String> sectionLabels, int pieces,
-                                    ImageService imageService, ImageStorageService imageStorageService, RepositoryDao repositoryDao) {
+                                    ImageStorageService imageStorageService, RepositoryDao repositoryDao) {
         this.imageFile = imageFile;
         this.challengeType = challengeType;
         this.sectionLabels = sectionLabels;
         this.pieces = pieces;
-        this.imageService = imageService;
         this.imageStorageService = imageStorageService;
         this.repositoryDao = repositoryDao;
     }
 
+    public MultipleTilesImageChallenge(ImageStorageService imageStorageService, RepositoryDao repositoryDao, RedisTemplate redisTemplate){
+        this.imageStorageService = imageStorageService;
+        this.repositoryDao = repositoryDao;
+        this.redisTemplate = redisTemplate;
+    }
+
     @Override
-    public boolean validate(String sessionId, String userAnswer, RedisTemplate redisTemplate) {
+    public boolean validate(String sessionId, String userAnswer) {
 
         List<String> userAnswers = Arrays.asList(userAnswer.split(","));
 
         String correctAnswerWithComma = (String) redisTemplate.opsForValue().get(sessionId);
         List<String> correctAnswers = Arrays.asList(correctAnswerWithComma.split(","));
-        int maxPoint = correctAnswers.size() * 2;
+        int maxPoint = correctAnswers.size();
         int userPoint = 0;
 
         for (String answer : userAnswers) {
             if (correctAnswers.contains(answer)) {
-                userPoint += 2;
+                userPoint += 1;
             } else {
                 userPoint -= 1;
             }
         }
+
+        logger.info("max point: " + maxPoint);
+        logger.info("user answer point: " + userPoint);
+        redisTemplate.delete(sessionId);
 
         // customize user point success or failure validation ( for now is the exact point +- 1 value )
         return userPoint == maxPoint + 1 || userPoint == maxPoint - 1 || userPoint == maxPoint;
@@ -112,8 +119,12 @@ public class MultipleTilesImageChallenge implements Challenge {
         // Save image data and get the path
         String directoryPath = "C:\\Users\\obest\\IdeaProjects\\ImageProcessPip\\testcase\\";
         String filePath = directoryPath+filename;
-        File outputfile = new File(filePath);
-        ImageIO.write(image, "jpg", outputfile);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", baos);
+        byte[] imageData = baos.toByteArray();
+        imageStorageService.saveImage(filePath, imageData);
+
         logger.info( filePath + " save original image successful!");
 
         Image original = new Image()
@@ -137,8 +148,11 @@ public class MultipleTilesImageChallenge implements Challenge {
 
             String slicePath = directoryPath+sliceFilename;
 
-            File outputSliceFile = new File(slicePath);
-            ImageIO.write(imageSlices[i], "jpg", outputSliceFile);
+            ByteArrayOutputStream slicedBaos = new ByteArrayOutputStream();
+            ImageIO.write(imageSlices[i], "jpg", slicedBaos);
+            byte[] imageSliceData = slicedBaos.toByteArray();
+            imageStorageService.saveImage(slicePath, imageSliceData);
+
             logger.info( slicePath + " save slice images successful!");
 
             Image imageSlice = new Image()
@@ -175,7 +189,7 @@ public class MultipleTilesImageChallenge implements Challenge {
                 .collect(Collectors.toSet());
     }
 
-    public CaptchaChallenge getCaptchaChallenge(Label label, String questionString, List<ImageLabel> imageLabels, int challengeType, RedisTemplate redisTemplate) throws IOException {
+    public CaptchaChallenge getCaptchaChallenge(Label label, String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException {
 
         Random random = new Random();
         // Generate a random index based on the size of the list ,  Get a random ImageLabel object
@@ -190,8 +204,9 @@ public class MultipleTilesImageChallenge implements Challenge {
         List<String> temporaryIds = new ArrayList<>();
 
         for (Image slices : imageSlices){
-            File file = new File(slices.getImagePath());
-            byte[] imageData = Files.readAllBytes(file.toPath());
+            // File file = new File(slices.getImagePath());
+            // byte[] imageData = Files.readAllBytes(file.toPath());
+            byte[] imageData = imageStorageService.getImage(slices.getImagePath());
             String imageBase64 = Base64.getEncoder().encodeToString(imageData);
             String temporaryId = UUID.randomUUID().toString().replace("-", "");
             imageSlicesBase64.add(imageBase64);
@@ -207,7 +222,7 @@ public class MultipleTilesImageChallenge implements Challenge {
         String temporaryAnswerId = String.join(",", temporaryIds);
 
         // Based on different challenge type, different saving method
-        saveProperAnswerToRedis(sessionId,challengeType,temporaryAnswerId, redisTemplate);
+        saveProperAnswerToRedis(sessionId,temporaryAnswerId, redisTemplate);
 
         CaptchaImage captchaImage = new CaptchaImage();
         captchaImage.setImageSlices(imageSlicesBase64).setTemporaryIds(temporaryIds);
@@ -220,7 +235,7 @@ public class MultipleTilesImageChallenge implements Challenge {
         return captchaChallenge;
     }
 
-    private void saveProperAnswerToRedis(String sessionId, int type, String temporaryAnswerId, RedisTemplate redisTemplate){
+    private void saveProperAnswerToRedis(String sessionId, String temporaryAnswerId, RedisTemplate redisTemplate){
         redisTemplate.opsForValue().set(sessionId, temporaryAnswerId, 3, TimeUnit.MINUTES); // save session and answerId to redis, with ttl 3 minutes
     }
 

@@ -4,7 +4,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 // Interface for Challenge
 public interface Challenge {
-    boolean validate(String sessionId, String userAnswer, RedisTemplate redisTemplate);
+    boolean validate(String sessionId, String userAnswer);
 
     void createChallenge();
 

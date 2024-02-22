@@ -23,19 +23,24 @@ public class ImageTypingChallenge implements Challenge {
 
     private RepositoryDao repositoryDao;
 
-    public ImageTypingChallenge(int challengeType, ImageService imageService, RepositoryDao repositoryDao) {
+    private RedisTemplate redisTemplate;
+
+    public ImageTypingChallenge(RedisTemplate redisTemplate){
+        this.redisTemplate = redisTemplate;
+    }
+
+    public ImageTypingChallenge(int challengeType, ImageService imageService, RepositoryDao repositoryDao,RedisTemplate redisTemplate) {
         this.challengeType = challengeType;
         this.imageService = imageService;
         this.repositoryDao = repositoryDao;
+        this.redisTemplate = redisTemplate;
     }
-
-    public ImageTypingChallenge() {}
 
     private static final Logger logger = LoggerFactory.getLogger(ImageTypingChallenge.class);
 
 
     @Override
-    public boolean validate(String sessionId, String userAnswer, RedisTemplate redisTemplate) {
+    public boolean validate(String sessionId, String userAnswer) {
         String correctAnswer = (String) redisTemplate.opsForValue().get(sessionId);
         boolean isCorrect = userAnswer.equals(correctAnswer);
         boolean isDeleted = Boolean.TRUE.equals(redisTemplate.delete(sessionId));
@@ -60,7 +65,7 @@ public class ImageTypingChallenge implements Challenge {
         repositoryDao.saveQuestionToDatabase(labelIdString, challengeType); // This method saves the question to the questions table
     }
 
-    public CaptchaChallenge getCaptchaChallenge(String questionString, int challengeType, RedisTemplate redisTemplate) throws IOException {
+    public CaptchaChallenge getCaptchaChallenge(String questionString) throws IOException {
 
         String randomLabel = generateRandomAlphanumeric(8);
         logger.info("Random label is " + randomLabel);
@@ -73,7 +78,7 @@ public class ImageTypingChallenge implements Challenge {
         String temporaryAnswerId = sessionId+"_"+randomLabel;
 
         // Based on different challenge type, different saving method
-        saveProperAnswerToRedis(sessionId,challengeType,temporaryAnswerId,redisTemplate);
+        saveProperAnswerToRedis(sessionId,temporaryAnswerId);
 
         CaptchaImage captchaImage = new CaptchaImage();
         captchaImage.setFilePath(filePath)
@@ -87,8 +92,8 @@ public class ImageTypingChallenge implements Challenge {
         return captchaChallenge;
     }
 
-    private void saveProperAnswerToRedis(String sessionId, int type, String temporaryAnswerId, RedisTemplate redisTemplate){
-        redisTemplate.opsForValue().set(sessionId, temporaryAnswerId, 3, TimeUnit.MINUTES); // save session and answerId to redis, with ttl 3 minutes
+    private void saveProperAnswerToRedis(String sessionId, String temporaryAnswerId){
+        redisTemplate.opsForValue().set(sessionId, temporaryAnswerId, 5, TimeUnit.MINUTES); // save session and answerId to redis, with ttl 3 minutes
     }
 
 }

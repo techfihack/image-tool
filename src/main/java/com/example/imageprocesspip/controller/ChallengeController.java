@@ -24,7 +24,7 @@ public class ChallengeController {
     private static final Logger logger = LoggerFactory.getLogger(ChallengeController.class);
 
     @PostMapping("")
-    public ResponseEntity createChallenge(@RequestParam("file") MultipartFile file, @RequestParam Integer challengeTypeInt, @RequestParam MultiValueMap<String, String> sectionLabels, @RequestParam int pieces) {
+    public ResponseEntity createChallenge(@RequestParam("file") MultipartFile file, @RequestParam Integer challengeTypeInt, @RequestParam MultiValueMap<String, String> sectionLabels, @RequestParam int pieces, @RequestParam String imageLabels) {
         // Validate inputs
         if (challengeTypeInt == null) {
             logger.error("Challenge cannot be null");
@@ -32,7 +32,7 @@ public class ChallengeController {
         }
         ChallengeType challengeType = ChallengeType.getByValue(challengeTypeInt);
         assert challengeType != null;
-        challengeService.createChallenge(file, challengeType, sectionLabels, pieces);
+        challengeService.createChallenge(file, challengeType, sectionLabels, pieces, imageLabels);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -40,6 +40,17 @@ public class ChallengeController {
     public CaptchaChallenge requestChallenge() throws IOException {
        CaptchaChallenge captchaChallenge = challengeService.requestRandomChallenge();
        return captchaChallenge;
+    }
+
+    @GetMapping("/request/specific")
+    public ResponseEntity requestSpecificChallenge(@RequestParam Integer challengeTypeInt) throws IOException {
+        if (challengeTypeInt == null) {
+            logger.error("Challenge cannot be null");
+            return new ResponseEntity<>("Challenge cannot be null", HttpStatus.BAD_REQUEST);
+        }
+        ChallengeType challengeType = ChallengeType.getByValue(challengeTypeInt);
+        CaptchaChallenge captchaChallenge = challengeService.requestUserChallenge(challengeType);
+        return new ResponseEntity<>(captchaChallenge,HttpStatus.OK);
     }
 
     @PostMapping("/validate")
@@ -51,6 +62,6 @@ public class ChallengeController {
         ChallengeType challengeType = ChallengeType.getByValue(challengeTypeInt);
         assert challengeType != null;
         Boolean result = challengeService.validateChallenge(challengeType, sessionId,userAnswer);
-        return new ResponseEntity(result,HttpStatus.OK);
+        return new ResponseEntity<>(result,HttpStatus.OK);
     }
 }
