@@ -1,10 +1,7 @@
 package com.example.imageprocesspip.challenge;
 
 import com.example.imageprocesspip.dao.RepositoryDao;
-import com.example.imageprocesspip.entity.CaptchaChallenge;
-import com.example.imageprocesspip.entity.CaptchaImage;
-import com.example.imageprocesspip.entity.Image;
-import com.example.imageprocesspip.entity.ImageLabel;
+import com.example.imageprocesspip.entity.*;
 import com.example.imageprocesspip.service.ImageStorageService;
 import com.example.imageprocesspip.utils.ImageUtils;
 import org.slf4j.Logger;
@@ -101,7 +98,7 @@ public class SingleTileImageChallenge implements Challenge {
         String originalImageUuid = UUID.randomUUID().toString().replace("-", "");
 
         // Save image data and get the path
-        String directoryPath = "C:\\Users\\obest\\IdeaProjects\\ImageProcessPip\\testcase\\";
+        String directoryPath = "C:\\Users\\obest\\IdeaProjects\\ImageProcessPip\\testcase\\single\\";
         String filePath = directoryPath+filename;
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -155,8 +152,16 @@ public class SingleTileImageChallenge implements Challenge {
 
             // Save labels to the database and create relationships in image_labels table
             for (String label : labelList) {
-                String labelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(label); // This method saves label if it's new and returns its UUID
-                repositoryDao.saveImageLabelRelationToDatabase(imageIdString, labelIdString); // This method creates an entry in the image_labels join table
+                if(label.contains(",")){
+                    List<String> words = Arrays.stream(label.split(",")).toList();
+                    for( String word : words ){
+                        String labelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(word); // This method saves label if it's new and returns its UUID
+                        repositoryDao.saveImageLabelRelationToDatabase(imageIdString, labelIdString); // This method creates an entry in the image_labels join table
+                    }
+                } else {
+                    String labelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(label); // This method saves label if it's new and returns its UUID
+                    repositoryDao.saveImageLabelRelationToDatabase(imageIdString, labelIdString); // This method creates an entry in the image_labels join table
+                }
             }
         }
 
@@ -173,7 +178,8 @@ public class SingleTileImageChallenge implements Challenge {
                 .collect(Collectors.toSet());
     }
 
-    public CaptchaChallenge getCaptchaChallenge(String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException {
+    @Override
+    public CaptchaChallenge getCaptchaChallenge(Label label, String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException {
 
         Random random = new Random();
         // Generate a random index based on the size of the list ,  Get a random ImageLabel object

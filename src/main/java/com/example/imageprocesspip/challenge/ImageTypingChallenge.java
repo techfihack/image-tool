@@ -3,12 +3,15 @@ package com.example.imageprocesspip.challenge;
 import com.example.imageprocesspip.dao.RepositoryDao;
 import com.example.imageprocesspip.entity.CaptchaChallenge;
 import com.example.imageprocesspip.entity.CaptchaImage;
+import com.example.imageprocesspip.entity.ImageLabel;
+import com.example.imageprocesspip.entity.Label;
 import com.example.imageprocesspip.service.ImageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -65,7 +68,8 @@ public class ImageTypingChallenge implements Challenge {
         repositoryDao.saveQuestionToDatabase(labelIdString, challengeType); // This method saves the question to the questions table
     }
 
-    public CaptchaChallenge getCaptchaChallenge(String questionString) throws IOException {
+    @Override
+    public CaptchaChallenge getCaptchaChallenge(Label label, String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException {
 
         String randomLabel = generateRandomAlphanumeric(8);
         logger.info("Random label is " + randomLabel);

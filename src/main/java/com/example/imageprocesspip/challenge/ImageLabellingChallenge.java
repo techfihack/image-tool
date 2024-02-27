@@ -1,13 +1,12 @@
 package com.example.imageprocesspip.challenge;
 
 import com.example.imageprocesspip.dao.RepositoryDao;
-import com.example.imageprocesspip.entity.CaptchaChallenge;
-import com.example.imageprocesspip.entity.CaptchaImage;
-import com.example.imageprocesspip.entity.Image;
-import com.example.imageprocesspip.entity.ImageLabel;
+import com.example.imageprocesspip.entity.*;
+import com.example.imageprocesspip.service.ImageService;
 import com.example.imageprocesspip.service.ImageStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,19 +23,23 @@ public class ImageLabellingChallenge implements Challenge {
     private int challengeType;
     private String labels;
     private ImageStorageService imageStorageService;
-
     private RepositoryDao repositoryDao;
-
     private RedisTemplate redisTemplate;
 
     private static final Logger logger = LoggerFactory.getLogger(ImageLabellingChallenge.class);
 
-    public ImageLabellingChallenge(RedisTemplate redisTemplate) {
+    public ImageLabellingChallenge(ImageStorageService imageStorageService, RepositoryDao repositoryDao, RedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
+        this.imageStorageService = imageStorageService;
+        this.repositoryDao = repositoryDao;
     }
 
     public ImageLabellingChallenge(RepositoryDao repositoryDao, RedisTemplate redisTemplate) {
         this.repositoryDao = repositoryDao;
+        this.redisTemplate = redisTemplate;
+    }
+
+    public ImageLabellingChallenge(RedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
@@ -87,7 +90,7 @@ public class ImageLabellingChallenge implements Challenge {
         String originalImageUuid = UUID.randomUUID().toString().replace("-", "");
 
         // Save image data and get the path
-        String directoryPath = "C:\\Users\\obest\\IdeaProjects\\ImageProcessPip\\testcase\\";
+        String directoryPath = "C:\\Users\\obest\\IdeaProjects\\ImageProcessPip\\testcase\\labelling\\";
         String filePath = directoryPath+filename;
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -115,8 +118,8 @@ public class ImageLabellingChallenge implements Challenge {
         }
     }
 
-
-    public CaptchaChallenge getCaptchaChallenge(String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException {
+    @Override
+    public CaptchaChallenge getCaptchaChallenge(Label label, String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException {
 
         Random random = new Random();
         // Generate a random index based on the size of the list ,  Get a random ImageLabel object

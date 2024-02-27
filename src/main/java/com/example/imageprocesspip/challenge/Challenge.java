@@ -1,6 +1,12 @@
 package com.example.imageprocesspip.challenge;
 
+import com.example.imageprocesspip.entity.CaptchaChallenge;
+import com.example.imageprocesspip.entity.ImageLabel;
+import com.example.imageprocesspip.entity.Label;
 import org.springframework.data.redis.core.RedisTemplate;
+
+import java.io.IOException;
+import java.util.List;
 
 // Interface for Challenge
 public interface Challenge {
@@ -10,6 +16,8 @@ public interface Challenge {
 
     String generateQuestionString(String label);
 
+    CaptchaChallenge getCaptchaChallenge(Label label, String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException;
+    
 }
 
     /*

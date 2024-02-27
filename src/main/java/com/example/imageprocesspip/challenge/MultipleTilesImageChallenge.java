@@ -79,7 +79,6 @@ public class MultipleTilesImageChallenge implements Challenge {
 
     @Override
     public void createChallenge() {
-
         // Extract values from params and construct your HashMap
         HashMap<Integer, List<String>> sectionImageLabelMap = new HashMap<>();
         for (String key : sectionLabels.keySet()) {
@@ -95,7 +94,7 @@ public class MultipleTilesImageChallenge implements Challenge {
         }
         try {
             BufferedImage originalImage = ImageIO.read(imageFile.getInputStream());
-            saveChallengeAnswer(Objects.requireNonNull(imageFile.getOriginalFilename()), originalImage, sectionImageLabelMap, pieces, challengeType, imageStorageService);
+            saveChallengeAnswer(Objects.requireNonNull(imageFile.getOriginalFilename()), originalImage, sectionImageLabelMap, pieces, challengeType);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -106,7 +105,7 @@ public class MultipleTilesImageChallenge implements Challenge {
         return "Please select multiple images that match the label " + label ;
     }
 
-    public void saveChallengeAnswer(String filename, BufferedImage image, HashMap<Integer, List<String>> sectionImageLabelMap, int pieces, int challengeType, ImageStorageService imageStorageService) throws IOException {
+    public void saveChallengeAnswer(String filename, BufferedImage image, HashMap<Integer, List<String>> sectionImageLabelMap, int pieces, int challengeType) throws IOException {
 
         // Slice the image into pieces
         BufferedImage[] imageSlices = ImageUtils.sliceImagePieces(image, pieces);
@@ -117,7 +116,7 @@ public class MultipleTilesImageChallenge implements Challenge {
         String originalImageUuid = UUID.randomUUID().toString().replace("-", "");
 
         // Save image data and get the path
-        String directoryPath = "C:\\Users\\obest\\IdeaProjects\\ImageProcessPip\\testcase\\";
+        String directoryPath = "C:\\Users\\obest\\IdeaProjects\\ImageProcessPip\\testcase\\multiple\\";
         String filePath = directoryPath+filename;
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -171,8 +170,16 @@ public class MultipleTilesImageChallenge implements Challenge {
 
             // Save labels to the database and create relationships in image_labels table
             for (String label : labelList) {
-                String labelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(label); // This method saves label if it's new and returns its UUID
-                repositoryDao.saveImageLabelRelationToDatabase(imageIdString, labelIdString); // This method creates an entry in the image_labels join table
+                if(label.contains(",")){
+                    List<String> words = Arrays.stream(label.split(",")).toList();
+                    for( String word : words ){
+                        String labelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(word); // This method saves label if it's new and returns its UUID
+                        repositoryDao.saveImageLabelRelationToDatabase(imageIdString, labelIdString); // This method creates an entry in the image_labels join table
+                    }
+                } else {
+                    String labelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(label); // This method saves label if it's new and returns its UUID
+                    repositoryDao.saveImageLabelRelationToDatabase(imageIdString, labelIdString); // This method creates an entry in the image_labels join table
+                }
             }
         }
 
@@ -189,6 +196,7 @@ public class MultipleTilesImageChallenge implements Challenge {
                 .collect(Collectors.toSet());
     }
 
+    @Override
     public CaptchaChallenge getCaptchaChallenge(Label label, String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException {
 
         Random random = new Random();

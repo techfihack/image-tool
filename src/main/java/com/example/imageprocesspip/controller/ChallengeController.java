@@ -24,14 +24,26 @@ public class ChallengeController {
     private static final Logger logger = LoggerFactory.getLogger(ChallengeController.class);
 
     @PostMapping("")
-    public ResponseEntity createChallenge(@RequestParam("file") MultipartFile file, @RequestParam Integer challengeTypeInt, @RequestParam MultiValueMap<String, String> sectionLabels, @RequestParam int pieces, @RequestParam String imageLabels) {
+    public ResponseEntity createChallenge(@RequestParam(name = "file", required = false) MultipartFile file,
+                                          @RequestParam Integer challengeTypeInt,
+                                          @RequestParam(required = false) MultiValueMap<String, String> sectionLabels,
+                                          @RequestParam(required = false) Integer pieces,
+                                          @RequestParam(required = false) String imageLabels) {
         // Validate inputs
         if (challengeTypeInt == null) {
-            logger.error("Challenge cannot be null");
             return new ResponseEntity<>("Challenge cannot be null", HttpStatus.BAD_REQUEST);
         }
         ChallengeType challengeType = ChallengeType.getByValue(challengeTypeInt);
         assert challengeType != null;
+
+        if ((challengeType == ChallengeType.SINGLE_TILING || challengeType == ChallengeType.MULTI_TILING) && file == null) {
+            return new ResponseEntity<>("File must be provided for this challenge type", HttpStatus.BAD_REQUEST);
+        }
+
+        if (challengeType == ChallengeType.IMAGE_LABELLING && (file == null || imageLabels == null)) {
+            return new ResponseEntity<>("File and image labels must be provided for image labelling challenge", HttpStatus.BAD_REQUEST);
+        }
+
         challengeService.createChallenge(file, challengeType, sectionLabels, pieces, imageLabels);
         return new ResponseEntity<>(HttpStatus.OK);
     }

@@ -1,13 +1,8 @@
 package com.example.imageprocesspip.utils;
 
-import com.luciad.imageio.webp.WebPWriteParam;
 import org.springframework.stereotype.Component;
 
-import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.FileImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
