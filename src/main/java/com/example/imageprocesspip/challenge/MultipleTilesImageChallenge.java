@@ -2,11 +2,12 @@ package com.example.imageprocesspip.challenge;
 
 import com.example.imageprocesspip.dao.RepositoryDao;
 import com.example.imageprocesspip.entity.*;
+import com.example.imageprocesspip.enums.ValidationStatus;
 import com.example.imageprocesspip.service.ImageStorageService;
 import com.example.imageprocesspip.utils.ImageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class MultipleTilesImageChallenge implements Challenge {
 
@@ -26,12 +26,12 @@ public class MultipleTilesImageChallenge implements Challenge {
     private int pieces;
     private ImageStorageService imageStorageService;
     private RepositoryDao repositoryDao;
-    private RedisTemplate redisTemplate;
+    private StringRedisTemplate redisTemplate;
 
     private static final Logger logger = LoggerFactory.getLogger(MultipleTilesImageChallenge.class);
 
     // Concrete implementation for Multiple Tiles Image Selection Challenge
-    public MultipleTilesImageChallenge(RedisTemplate redisTemplate){
+    public MultipleTilesImageChallenge(StringRedisTemplate redisTemplate){
         this.redisTemplate = redisTemplate;
     }
 
@@ -45,18 +45,23 @@ public class MultipleTilesImageChallenge implements Challenge {
         this.repositoryDao = repositoryDao;
     }
 
-    public MultipleTilesImageChallenge(ImageStorageService imageStorageService, RepositoryDao repositoryDao, RedisTemplate redisTemplate){
+    public MultipleTilesImageChallenge(ImageStorageService imageStorageService, RepositoryDao repositoryDao, StringRedisTemplate redisTemplate){
         this.imageStorageService = imageStorageService;
         this.repositoryDao = repositoryDao;
         this.redisTemplate = redisTemplate;
     }
 
     @Override
-    public boolean validate(String sessionId, String userAnswer) {
+    public ValidationStatus validate(String sessionId, String userAnswer) {
 
-        List<String> userAnswers = Arrays.asList(userAnswer.split(","));
+        String[] answersArray = userAnswer.split(",");
+        Set<String> userAnswersSet = new LinkedHashSet<>(Arrays.asList(answersArray));
+        List<String> userAnswers = new ArrayList<>(userAnswersSet);
 
         String correctAnswerWithComma = (String) redisTemplate.opsForValue().get(sessionId);
+        if(correctAnswerWithComma == null){
+            return ValidationStatus.EXPIRED;
+        }
         List<String> correctAnswers = Arrays.asList(correctAnswerWithComma.split(","));
         int maxPoint = correctAnswers.size();
         int userPoint = 0;
@@ -73,8 +78,11 @@ public class MultipleTilesImageChallenge implements Challenge {
         logger.info("user answer point: " + userPoint);
         redisTemplate.delete(sessionId);
 
-        // customize user point success or failure validation ( for now is the exact point +- 1 value )
-        return userPoint == maxPoint + 1 || userPoint == maxPoint - 1 || userPoint == maxPoint;
+        if( userPoint == maxPoint + 1 || userPoint == maxPoint - 1 || userPoint == maxPoint){
+            return ValidationStatus.SUCCESS;
+        } else {
+            return ValidationStatus.FAILED;
+        }
     }
 
     @Override
@@ -102,7 +110,7 @@ public class MultipleTilesImageChallenge implements Challenge {
 
     @Override
     public String generateQuestionString(String label){
-        return "Please select multiple images that match the label " + label ;
+        return "Please select multiple images that match the label <b>'" + label + "'</b>" ;
     }
 
     public void saveChallengeAnswer(String filename, BufferedImage image, HashMap<Integer, List<String>> sectionImageLabelMap, int pieces, int challengeType) throws IOException {
@@ -123,9 +131,9 @@ public class MultipleTilesImageChallenge implements Challenge {
         ImageIO.write(image, "jpg", baos);
         byte[] imageData = baos.toByteArray();
         imageStorageService.saveImage(filePath, imageData);
-
         logger.info( filePath + " save original image successful!");
 
+        /*
         Image original = new Image()
                 .setImageId(originalImageUuid)
                 .setImageName(filename)
@@ -136,6 +144,7 @@ public class MultipleTilesImageChallenge implements Challenge {
 
         // Save the original image to the database
         repositoryDao.saveImages(original);
+        */
 
         // Iterate over each image slice
         for (int i = 0; i < imageSlices.length; i++) {
@@ -166,38 +175,42 @@ public class MultipleTilesImageChallenge implements Challenge {
             repositoryDao.saveImages(imageSlice);
 
             // Get labels for the current section, if there are any
-            List<String> labelList = sectionImageLabelMap.getOrDefault(i, new ArrayList<>());
+            List<String> labelList = sectionImageLabelMap.getOrDefault(i+1, new ArrayList<>());
 
             // Save labels to the database and create relationships in image_labels table
             for (String label : labelList) {
                 if(label.contains(",")){
                     List<String> words = Arrays.stream(label.split(",")).toList();
                     for( String word : words ){
-                        String labelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(word); // This method saves label if it's new and returns its UUID
-                        repositoryDao.saveImageLabelRelationToDatabase(imageIdString, labelIdString); // This method creates an entry in the image_labels join table
+                        String randomLabelIdString = UUID.randomUUID().toString().replace("-", "");
+                        String actualLabelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(word,randomLabelIdString); // This method saves label if it's new and returns its UUID
+                        logger.info("saved label success - " + word);
+                        repositoryDao.saveImageLabelRelationToDatabase(imageIdString, actualLabelIdString, challengeType);
+                        logger.info("saved image label success - " + actualLabelIdString);
+                        repositoryDao.saveQuestionToDatabase(actualLabelIdString,challengeType);
+                        logger.info("saved question success - " + " question type : " + challengeType + " label : " + word);
                     }
                 } else {
-                    String labelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(label); // This method saves label if it's new and returns its UUID
-                    repositoryDao.saveImageLabelRelationToDatabase(imageIdString, labelIdString); // This method creates an entry in the image_labels join table
+                    String randomLabelIdString = UUID.randomUUID().toString().replace("-", "");
+                    String actualLabelIdString = repositoryDao.saveLabelToDatabaseIfNotExists(label,randomLabelIdString); // This method saves label if it's new and returns its UUID
+                    logger.info("saved label success - " + label);
+                    repositoryDao.saveImageLabelRelationToDatabase(imageIdString, actualLabelIdString, challengeType);
+                    logger.info("saved image label success - " + actualLabelIdString);
+                    repositoryDao.saveQuestionToDatabase(actualLabelIdString,challengeType);
+                    logger.info("saved question success - " + " question type : " + challengeType + " label : " + label);
                 }
             }
         }
-
-        // After saving image and labels, now create a question entry for each unique label
-        for (String label : getAllUniqueLabels(sectionImageLabelMap)) {
-            String labelIdString = repositoryDao.getLabelIdByName(label); // This method retrieves the UUID of the label
-            repositoryDao.saveQuestionToDatabase(labelIdString,challengeType); // This method saves the question to the questions table
-        }
-    }
-
-    public Set<String> getAllUniqueLabels(Map<Integer, List<String>> sectionImageLabelMap) {
-        return sectionImageLabelMap.values().stream()
-                .flatMap(List::stream)
-                .collect(Collectors.toSet());
     }
 
     @Override
-    public CaptchaChallenge getCaptchaChallenge(Label label, String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException {
+    public CaptchaChallenge getCaptchaChallenge(int challengeType) throws IOException {
+
+        Question question = repositoryDao.getQuestionByChallengeType(challengeType);
+        Label label = repositoryDao.getLabelById(question.getLabelId());
+        String questionString = this.generateQuestionString(label.getLabelName());
+        List<ImageLabel> imageLabels = repositoryDao.getImageLabelsByLabelId(label.getLabelId());
+        // get image list based on imageLabels, select isOriginal = 0
 
         Random random = new Random();
         // Generate a random index based on the size of the list ,  Get a random ImageLabel object
@@ -210,30 +223,29 @@ public class MultipleTilesImageChallenge implements Challenge {
         List<String> answerImageIds = repositoryDao.getSameGroupAnswerImages(label.getLabelId(),imageSlicesIds);
         List<String> imageSlicesBase64 = new ArrayList<>();
         List<String> temporaryIds = new ArrayList<>();
+        List<String> temporaryAnswerIdList = new ArrayList<>();
 
         for (Image slices : imageSlices){
-            // File file = new File(slices.getImagePath());
-            // byte[] imageData = Files.readAllBytes(file.toPath());
             byte[] imageData = imageStorageService.getImage(slices.getImagePath());
             String imageBase64 = Base64.getEncoder().encodeToString(imageData);
             String temporaryId = UUID.randomUUID().toString().replace("-", "");
             imageSlicesBase64.add(imageBase64);
-
+            temporaryIds.add(temporaryId);
             // if this slice is one of them answer image id, then include its temporary id inside answer list
             if(answerImageIds.contains(slices.getImageId())){
-                temporaryIds.add(temporaryId);
+                temporaryAnswerIdList.add(temporaryId);
             }
         }
 
         // Random UUID as session ID for user
         String sessionId = UUID.randomUUID().toString().replace("-", "");
-        String temporaryAnswerId = String.join(",", temporaryIds);
+        String temporaryAnswerId = String.join(",", temporaryAnswerIdList);
 
         // Based on different challenge type, different saving method
         saveProperAnswerToRedis(sessionId,temporaryAnswerId, redisTemplate);
 
         CaptchaImage captchaImage = new CaptchaImage();
-        captchaImage.setImageSlices(imageSlicesBase64).setTemporaryIds(temporaryIds);
+        captchaImage.setImageSlicesBase64String(imageSlicesBase64).setTemporaryIds(temporaryIds);
 
         CaptchaChallenge captchaChallenge = new CaptchaChallenge().setCaptchaImages(captchaImage)
                 .setChallengeType(challengeType)
@@ -243,7 +255,7 @@ public class MultipleTilesImageChallenge implements Challenge {
         return captchaChallenge;
     }
 
-    private void saveProperAnswerToRedis(String sessionId, String temporaryAnswerId, RedisTemplate redisTemplate){
+    private void saveProperAnswerToRedis(String sessionId, String temporaryAnswerId, StringRedisTemplate redisTemplate){
         redisTemplate.opsForValue().set(sessionId, temporaryAnswerId, 3, TimeUnit.MINUTES); // save session and answerId to redis, with ttl 3 minutes
     }
 

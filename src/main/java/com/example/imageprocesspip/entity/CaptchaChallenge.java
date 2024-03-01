@@ -17,5 +17,6 @@ public class CaptchaChallenge {
     private CaptchaImage captchaImages;
     private String questionString;
     private int challengeType;
+    private List<String> answerChoice;
 
 }

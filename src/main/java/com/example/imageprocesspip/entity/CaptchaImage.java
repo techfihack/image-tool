@@ -14,12 +14,11 @@ import java.util.List;
 public class CaptchaImage {
 
     // base 64 converted image slices string
-    private List<String> imageSlices;
+    private List<String> imageSlicesBase64String;
 
     private List<String> temporaryIds;
 
-    private String filePath;
+    private String base64String;
 
     private String temporaryId;
-
 }

@@ -79,7 +79,28 @@
             cursor: pointer; /* Changes the cursor to indicate it can be interacted with */
         }
 
+        .success {
+            color: #4F8A10;
+            background-color: #DFF2BF;
+        }
 
+        .failure {
+            color: #D8000C;
+            background-color: #FFBABA;
+        }
+
+        #responseMessage {
+            display: none;
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 1000;
+            font-size: 1.2em;
+        }
 
     </style>
 </head>
@@ -137,6 +158,7 @@
             </div>
         </form>
 
+        <div id="responseMessage"></div>
     </div>
 
     <!-- Custom Script -->
@@ -297,12 +319,16 @@
                 method: 'POST',
                 body: formData
             }).then(response => {
-                    // Check if the request was successful
+                    var message;
+                    var messageClass;
                     if (!response.ok) {
-                        console.log("challenge creation failed");
+                        message = "Captcha creation failed!";
+                        messageClass = "failure";
                     }else{
-                        console.log("challenge creation success");
+                        message = "Captcha creation success!";
+                        messageClass = "success";
                     }
+                    showMessage(message, messageClass);
                 });
         }
 
@@ -393,6 +419,15 @@
             } else { // Clear label if no label provided
                 labelSpan.text('');
             }
+        }
+
+        function showMessage(message, messageClass) {
+            let responseMessageDiv = $('#responseMessage');
+            responseMessageDiv.removeClass('success failure');
+            responseMessageDiv.addClass(messageClass).text(message).fadeIn(500).delay(3000).fadeOut(500, function() {
+                // Remove the inline styles after fade out
+                responseMessageDiv.removeAttr('style');
+            });
         }
 
         function addLabel(label) {

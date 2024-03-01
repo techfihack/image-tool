@@ -207,7 +207,6 @@ public class ImageService {
     }
     */
 
-
     public String createImageWithTextLabel(String label){
 
         // Define your text and image parameters

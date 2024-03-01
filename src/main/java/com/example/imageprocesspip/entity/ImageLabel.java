@@ -1,5 +1,6 @@
 package com.example.imageprocesspip.entity;
 
+import com.example.imageprocesspip.enums.ChallengeType;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,5 +14,6 @@ public class ImageLabel {
 
     String imageId;
     String labelId;
+    ChallengeType challengeType;
 
 }

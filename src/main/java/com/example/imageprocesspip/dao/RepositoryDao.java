@@ -48,7 +48,7 @@ public class RepositoryDao {
 
 
     // Method to insert a label into the database if it doesn't already exist
-    public String saveLabelToDatabaseIfNotExists(String label) {
+    public String saveLabelToDatabaseIfNotExists(String label, String labelId) {
         String selectSql = "SELECT id FROM labels WHERE label_name = ?";
         List<String> labelIds = jdbcTemplate.query(
                 selectSql,
@@ -58,7 +58,6 @@ public class RepositoryDao {
 
         // If labelIds is empty, no label was found, so insert a new one.
         if (labelIds.isEmpty()) {
-            String labelId = UUID.randomUUID().toString().replace("-", "");
             jdbcTemplate.update(
                     "INSERT INTO labels (id, label_name) VALUES (?, ?)",
                     labelId, label
@@ -72,10 +71,10 @@ public class RepositoryDao {
 
 
     // Method to create an entry in the image_labels join table
-    public void saveImageLabelRelationToDatabase(String imageId, String labelId) {
+    public void saveImageLabelRelationToDatabase(String imageId, String labelId, int challengeType) {
         jdbcTemplate.update(
-                "INSERT INTO image_labels (image_id, label_id) VALUES (?, ?)",
-                imageId, labelId
+                "INSERT INTO image_labels (image_id, label_id, challenge_type) VALUES (?, ?, ?)",
+                imageId, labelId, challengeType
         );
     }
 
@@ -92,13 +91,14 @@ public class RepositoryDao {
         return jdbcTemplate.queryForObject(sql, new Object[]{labelId}, new LabelRowMapper());
     }
 
+
     public List<ImageLabel> getImageLabelsByLabelId(String labelId){
         String sql = "SELECT * FROM image_labels WHERE label_id = ?";
         return jdbcTemplate.query(sql, new Object[]{labelId}, new ImageLabelRowMapper());
     }
 
     public List<Image>  getImageSlicesGroupById(String imageId){
-        String sql = "select * from images where group_id = ( select group_id from images where id = ? )";
+        String sql = "select * from images where group_id = ( select group_id from images where id = ? ) and is_original = 0 order by section ASC";
         return jdbcTemplate.query(sql, new Object[]{imageId}, new ImageRowMapper());
     }
 
@@ -113,6 +113,8 @@ public class RepositoryDao {
         // Prepare the SQL query with placeholders for labelId and imageIds
         String sql = "SELECT image_id FROM image_labels WHERE label_id = ? AND image_id IN (" +
                 String.join(",", Collections.nCopies(imageIds.size(), "?")) + ")";
+
+        System.out.println("sql is " + sql);
 
         // Prepare the parameters for the SQL query
         List<Object> parameters = new ArrayList<>();
@@ -132,6 +134,16 @@ public class RepositoryDao {
 
         // Create a comma-separated string of placeholders
         String sql = "SELECT label_name FROM labels WHERE id IN (" + String.join(",", Collections.nCopies(labelIds.size(), "?")) + ")";
+
+        // Convert ids list to an array of objects
+        Object[] params = labelIds.toArray(new Object[0]);
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("label_name"));
+    }
+
+    public List<String> getLabelNameNotInId(List<String> labelIds){
+
+        // Create a comma-separated string of placeholders
+        String sql = "SELECT label_name FROM labels WHERE id NOT IN (" + String.join(",", Collections.nCopies(labelIds.size(), "?")) + ") ORDER BY RAND() LIMIT 4";
 
         // Convert ids list to an array of objects
         Object[] params = labelIds.toArray(new Object[0]);

@@ -3,6 +3,7 @@ package com.example.imageprocesspip.challenge;
 import com.example.imageprocesspip.entity.CaptchaChallenge;
 import com.example.imageprocesspip.entity.ImageLabel;
 import com.example.imageprocesspip.entity.Label;
+import com.example.imageprocesspip.enums.ValidationStatus;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.IOException;
@@ -10,13 +11,13 @@ import java.util.List;
 
 // Interface for Challenge
 public interface Challenge {
-    boolean validate(String sessionId, String userAnswer);
+    ValidationStatus validate(String sessionId, String userAnswer);
 
     void createChallenge();
 
     String generateQuestionString(String label);
 
-    CaptchaChallenge getCaptchaChallenge(Label label, String questionString, List<ImageLabel> imageLabels, int challengeType) throws IOException;
+    CaptchaChallenge getCaptchaChallenge(int challengeType) throws IOException;
     
 }
 
