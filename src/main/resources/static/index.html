@@ -12,17 +12,41 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
 
+        html {
+            height: 100%;
+        }
+
+        body {
+            background-image: url('./image/sky.webp');
+            background-size: cover; /* This will ensure that your background covers the whole page */
+            background-position: center; /* This centers the background image */
+            background-repeat: no-repeat; /* This will prevent the image from repeating */
+        }
+
         h2 {
-            background: linear-gradient(to right, #ff6b6b, #ffa07a);
-            color: #fff;
+            background-image: linear-gradient(to right, #add8e6, #fdae84);
+            color: white; /* You might want to change the text color for better readability */
+            display: inline-block; /* This will apply the gradient across the text */
+            -webkit-background-clip: text; /* Clips the background to the text for WebKit browsers */
+            background-clip: text; /* Clips the background to the text for other browsers */
+            -webkit-text-fill-color: transparent; /* Makes the text color transparent for WebKit browsers */
+            background-color: rgba(255, 255, 255, 0.7); /* Semi-transparent white */
+            backdrop-filter: blur(5px); /* Frosted glass effect */
+
             padding: 15px;
             border-radius: 8px;
             text-align: center;
         }
         .row {
-            margin-top:5px;
+            margin-top:15px;
         }
         .my-container {
+            margin-top:200px;
+            margin-left:auto;
+            margin-right:auto;
+            max-width: 1000px;
+            font-size: 24px;
+
             background-color: #f8f9fa;
             padding: 30px;
             border-radius: 8px;
@@ -147,24 +171,15 @@
                 </div>
             </div>
 
-            <!--
-            <div class="col-md-6">
-                <div class="form-group">
-                    <span  style="color: darkred; font-weight: bold; font-family: 'Arial',sans-serif;">
-                        *** Width will follow image aspect ratio ***
-                    </span>
-                </div>
-            </div>
-            -->
         </div>
 
         <!-- Compress Ratio -->
         <div class="row">
-            <div class="col-md-8">
+            <div class="col-md-12">
                 <div class="form-group">
                     <label class="form-label" for="compressQuality">Compress Ratio (%) : </label>
-                    <span id="rangeValue">50%</span>
-                    <input id="compressQuality" type="range" min="1" max="100" step="1" value="50">
+                    <span id="rangeValue">80%</span>
+                    <input id="compressQuality" type="range" min="1" max="100" step="1" value="80">
                 </div>
             </div>
         </div>
