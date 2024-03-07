@@ -1,11 +1,5 @@
 
 spring:
-  datasource:
-    username: root
-    password: root
-    url: jdbc:mysql://localhost:3306/pip?useSSL=false&serverTimezone=UTC
-    hikari:
-      schema: pip
   servlet:
     multipart:
       max-file-size: 100MB
@@ -13,6 +7,6 @@ spring:
 
 server:
   servlet:
-    context-path: /pip
+    context-path: /api
 
 

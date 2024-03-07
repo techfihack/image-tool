@@ -230,7 +230,7 @@
         });
 
         // Fetch data from /api/image/format using the Fetch API
-        fetch('/pip/image/formats')
+        fetch('/api/image/formats')
             .then(response => response.json())
             .then(data => {
                 // Populate the select element with options
@@ -286,7 +286,7 @@
     function singleConversion(formData){
 
         // Make a request to /api/image/upload
-        fetch('/pip/image/uploadSingle', {
+        fetch('/api/image/uploadSingle', {
             method: 'POST',
             body: formData
         })
@@ -335,7 +335,7 @@
     function multiConversion(formData){
 
         // Make a request to /api/image/upload
-        fetch('/pip/image/thread/uploadMulti', {
+        fetch('/api/image/thread/uploadMulti', {
             method: 'POST',
             body: formData
         })
