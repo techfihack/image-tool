@@ -1,6 +1,5 @@
 package com.example.imagetools.controller;
 
-
 import com.example.imagetools.entity.ProcessedImage;
 import com.example.imagetools.enums.ImageFormat;
 import com.example.imagetools.service.ImageService;
@@ -61,7 +60,7 @@ public class ImageController {
         // single file conversion , return image
         try {
             BufferedImage originalImage = ImageIO.read(files.get(0).getInputStream());
-            ProcessedImage processedImage = imageService.convertImgToWebp(originalImage, files.get(0).getOriginalFilename(), heights.get(0), compressQuality);
+            ProcessedImage processedImage = imageService.convertImgToWebp(originalImage, files.get(0).getOriginalFilename(), heights.get(0), compressQuality, format);
             format = format != null ? format : "webp";      // default is webp type image
             // Create HttpHeaders with appropriate content type and length
             HttpHeaders headers = new HttpHeaders();
@@ -78,7 +77,7 @@ public class ImageController {
     }
 
     @PostMapping("/uploadMulti")
-    public ResponseEntity processMultiImages(@RequestParam("files") List<MultipartFile> files, @RequestParam("heights[]") List<Integer> heights, Integer compressQuality) {
+    public ResponseEntity processMultiImages(@RequestParam("files") List<MultipartFile> files, @RequestParam("heights[]") List<Integer> heights, Integer compressQuality, String format) {
 
         if(files.size() != heights.size()){
             return new ResponseEntity<>("Files and heights input does not match", HttpStatus.BAD_REQUEST);
@@ -91,7 +90,7 @@ public class ImageController {
             for (int i = 0; i < files.size() ; i++) {
                 MultipartFile file = files.get(i);
                 BufferedImage originalImage = ImageIO.read(file.getInputStream());
-                ProcessedImage processedImage = imageService.convertImgToWebp(originalImage, file.getOriginalFilename(), heights.get(i), compressQuality);
+                ProcessedImage processedImage = imageService.convertImgToWebp(originalImage, file.getOriginalFilename(), heights.get(i), compressQuality, format);
                 processedImages.add(processedImage);
             }
 
@@ -113,7 +112,7 @@ public class ImageController {
 
 
     @PostMapping("/thread/uploadMulti")
-    public ResponseEntity processMultiImagesThreading(@RequestParam("files") List<MultipartFile> files, @RequestParam("heights[]") List<Integer> heights, Integer compressQuality) {
+    public ResponseEntity processMultiImagesThreading(@RequestParam("files") List<MultipartFile> files, @RequestParam("heights[]") List<Integer> heights, Integer compressQuality, String format) {
 
         if (files.size() != heights.size()) {
             return new ResponseEntity<>("Files and heights input does not match", HttpStatus.BAD_REQUEST);
@@ -128,7 +127,7 @@ public class ImageController {
             for (int i = 0; i < files.size(); i++) {
                 // Generate a random UUID
                 UUID taskUUID = UUID.randomUUID();
-                ImageConversionTask conversionTask = new ImageConversionTask(imageService,files.get(i), heights.get(i), compressQuality,taskUUID.toString());
+                ImageConversionTask conversionTask = new ImageConversionTask(imageService,files.get(i), heights.get(i), compressQuality,taskUUID.toString(), format);
                 Future<ProcessedImage> future = executorService.submit(conversionTask);
                 futures.add(future);
 

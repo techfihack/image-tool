@@ -24,9 +24,8 @@
         }
 
         h2 {
-            background-image: linear-gradient(to right, #add8e6, #fdae84);
+            background-image: linear-gradient(to right, #0284c7, #ea580c);
             color: white; /* You might want to change the text color for better readability */
-            display: inline-block; /* This will apply the gradient across the text */
             -webkit-background-clip: text; /* Clips the background to the text for WebKit browsers */
             background-clip: text; /* Clips the background to the text for other browsers */
             -webkit-text-fill-color: transparent; /* Makes the text color transparent for WebKit browsers */
@@ -41,7 +40,7 @@
             margin-top:15px;
         }
         .my-container {
-            margin-top:200px;
+            margin-top:100px;
             margin-left:auto;
             margin-right:auto;
             max-width: 1000px;
@@ -74,6 +73,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            text-align: center;
         }
         .submit-button:hover {
             background-color: #218838;
@@ -125,16 +125,49 @@
 
         #result img {
             max-width: 100%; /* Set a maximum width for the image */
-            height: auto; /* Allow the height to adjust proportionally */
+            height: 400px; /* Allow the height to adjust proportionally */
             display: block; /* Remove extra space below inline elements */
             margin: 0 auto; /* Center the image within its container */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* This ensures the table respects the given width */
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .file-name {
+            width: 60%;
+            word-wrap: break-word; /* Ensure long names do not overflow */
+        }
+        .height-input {
+            width: 40%; /* This gives more space to the file name */
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 6px;
+            margin-top: 4px; /* For spacing between rows */
+            box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+        }
+        .input-label {
+            margin: 0;
         }
 
     </style>
 
 </head>
 <body>
-<div class="my-container" style="margin-top: 50px">
+<div class="my-container">
 
     <h2>Image Conversion</h2>
 
@@ -154,11 +187,15 @@
         <div class="row" >
             <div class="col-md-12">
                 <div class="form-group">
-                    <label class="form-label" for="files">Images : </label>
-                    <input class="form-control" type="file" id="files" name="files" multiple/>
+                    <label class="form-label" for="files">Images (Maximum 10 files) : </label>
+                    <input class="form-control" type="file" id="files" name="files" accept="image/*" multiple onchange="updateFileList()" />
                 </div>
             </div>
         </div>
+
+        <table id="fileList">
+            <!-- Dynamically filled rows will go here -->
+        </table>
 
         <!-- Resize Height -->
         <div class="row">
@@ -186,22 +223,22 @@
 
         <div class="row">
             <div class="col-md-12">
-                <div class="form-group">
+                <div class="form-group" style="text-align: center">
                     <button class="btn btn-primary submit-button" type="button" onclick="convertImage()" style="margin-top:10px">Convert</button>
                 </div>
             </div>
         </div>
+
     </form>
 
     <div id="result" ></div>
-
     <div id="downloadDiv" ></div>
 </div>
 
 
-
+<script src="./js/script.js" ></script>
+<!--
 <script>
-
     document.addEventListener('DOMContentLoaded', function() {
         // Document is ready
 
@@ -211,6 +248,8 @@
             document.getElementById('rangeValue').innerText = this.value + "%";
         });
 
+
+        /*
         document.getElementById('files').addEventListener('change', function(event) {
             // Get the selected files
             const files = event.target.files;
@@ -223,7 +262,7 @@
 
                 const label = document.createElement('label');
                 label.className = 'form-label';
-                label.textContent = 'Height for image (' + files[i].name + ')';
+                label.textContent = 'Resize Height for image (' + files[i].name + ')';
 
                 const input = document.createElement('input');
                 input.type = 'number';
@@ -242,7 +281,7 @@
                 document.getElementById('height-div').appendChild(label);
                 document.getElementById('height-div').appendChild(input);
             }
-        });
+        });*/
 
         // Fetch data from /api/image/format using the Fetch API
         fetch('/api/image/formats')
@@ -268,16 +307,12 @@
     function convertImage() {
         // Get form values
         const format = document.getElementById('imageFormats').value;
-        // const width = document.getElementById('width').value;
-        // const height = document.getElementById('height').value;
         const compressQuality = document.getElementById('compressQuality').value;
         const filesInput = document.getElementById('files');
 
         // Create a FormData object to send form data
         const formData = new FormData();
         formData.append('format', format);
-        //formData.append('width', width);
-        //formData.append('height', height);
         formData.append('compressQuality', compressQuality);
 
         // Append files to FormData
@@ -314,35 +349,40 @@
                 return response.blob();
             })
             .then(blobData => {
-                // Create a data URL from the blob data
-                const imageUrl = URL.createObjectURL(blobData);
 
-                // Display the resulting image in the "result" div
-                const resultDiv = document.getElementById('result');
-                resultDiv.innerHTML = ''; // Clear previous content
+                console.log("blob = " + JSON.stringify(blobData,null,2));
+                console.log("blob is instance of " + blobData instanceof Blob)
+                console.log("blob data size " + blobData.size);
+                if(blobData instanceof Blob && blobData.size > 5500) {
+                    // Create a data URL from the blob data
+                    const imageUrl = URL.createObjectURL(blobData);
 
-                // Create an img element and set its source to the data URL of the resulting image
-                const img = document.createElement('img');
-                img.src = imageUrl;
+                    // Display the resulting image in the "result" div
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.innerHTML = ''; // Clear previous content
 
-                // Create a link element for downloading the image
-                const downloadLink = document.createElement('a');
-                downloadLink.href = imageUrl;
-                downloadLink.download = 'processed-image.webp'; // You can customize the default filename
+                    // Create an img element and set its source to the data URL of the resulting image
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
 
-                // Attach a double-click event listener to the image
-                img.addEventListener('dblclick', function() {
-                    // Append the link to the body
-                    document.body.appendChild(downloadLink);
+                    // Create a link element for downloading the image
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = imageUrl;
+                    downloadLink.download = 'processed-image.' + formData.get('format'); // You can customize the default filename
 
-                    // Trigger a click on the link to initiate the download
-                    downloadLink.click();
+                    // Attach a double-click event listener to the image
+                    img.addEventListener('dblclick', function () {
+                        // Append the link to the body
+                        document.body.appendChild(downloadLink);
 
-                    // Remove the link from the body
-                    document.body.removeChild(downloadLink);
-                });
+                        // Trigger a click on the link to initiate the download
+                        downloadLink.click();
 
-                resultDiv.appendChild(img);
+                        // Remove the link from the body
+                        document.body.removeChild(downloadLink);
+                    });
+                    resultDiv.appendChild(img);
+                }
             })
             .catch(error => alert('Error converting image:' + error));
     }
@@ -380,8 +420,31 @@
             .catch(error => alert('Error converting image:' + error));
     }
 
+    function updateFileList() {
+        const fileListElement = document.getElementById('fileList');
+        const files = document.getElementById('files').files;
+        fileListElement.innerHTML = ''; // Clear existing list
+        if (files.length > 10) {
+            alert('You can only select up to 10 files.');
+            return;
+        }
+        for (let i = 0; i < files.length; i++) {
+            const row = fileListElement.insertRow();
+            const cell1 = row.insertCell(0);
+            cell1.textContent = files[i].name;
+            const cell2 = row.insertCell(1);
+
+            const img = new Image();
+            img.src = URL.createObjectURL(files[i]);
+            img.onload = function() {
+                console.log("height " + i + ": " + img.naturalHeight);
+                cell2.innerHTML = `<input type="number" class="form-control" name="heights[]" placeholder="${img.naturalHeight + ' pixels'}" value="${img.naturalHeight}">`;
+            };
+        }
+    }
 
 </script>
+-->
 
 </body>
 </html>

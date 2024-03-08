@@ -6,7 +6,9 @@ import java.util.stream.Collectors;
 
 public enum ImageFormat {
 
-    WEBP("webp");
+    WEBP("webp"),
+
+    JPEG("jpeg");
 
     final String value;
 

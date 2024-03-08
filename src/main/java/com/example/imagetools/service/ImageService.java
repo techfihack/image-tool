@@ -30,7 +30,7 @@ public class ImageService {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageService.class);
 
-    public ProcessedImage convertImgToWebp(BufferedImage originalImage, String originalFilename, Integer targetHeight, Integer compressQuality){
+    public ProcessedImage convertImgToWebp(BufferedImage originalImage, String originalFilename, Integer targetHeight, Integer compressQuality, String format){
 
         int newHeight = targetHeight != null ? targetHeight : originalImage.getHeight();
         float quality = compressQuality != null ? (float)(compressQuality / 100.00) : 0.1f;
@@ -39,16 +39,14 @@ public class ImageService {
         int newWidth = (int)(newHeight * aspectRatio);
 
         try {
-
             if (quality <= 0 || quality > 1) {
                 throw new IOException("Please select compress quality from range 0 to 1");
             }
 
             // Get an ImageWriter for the "image/webp" MIME type
-            ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
+            ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/" + format).next();
 
             //resize first then compress
-            //resize
             BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
 
             // Use the Graphics2D class to draw the resized image
@@ -56,18 +54,11 @@ public class ImageService {
             g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
             g2d.dispose();
 
-            // Create a WebPWriteParam and configure it for lossless compression
-            WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
-
-            // Notify encoder to consider WebPWriteParams
-            writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-
-            // Set lossless compression
-            writeParam.setCompressionType(writeParam.getCompressionTypes()[WebPWriteParam.LOSSY_COMPRESSION]);
-            writeParam.setCompressionQuality(quality);
+            // Create and configure the ImageWriteParam based on the format
+            ImageWriteParam writeParam = getImageWriteParam(format, writer, quality);
 
             // Set new filename
-            String newFileName = changeFileName(originalFilename);
+            String newFileName = changeFileName(originalFilename,format);
 
             // Save the compressed image to a file
             File compressedFile = new File(newFileName);
@@ -77,14 +68,31 @@ public class ImageService {
             // Read the compressed image from the file into a byte array if needed
             byte[] processedImageData = Files.readAllBytes(compressedFile.toPath());
 
-            ByteArrayInputStream streamProcessedImageData = new ByteArrayInputStream(processedImageData);
-
             return new ProcessedImage(newFileName, processedImageData);
 
         } catch (IOException | UnsupportedOperationException e){
             e.printStackTrace();
         }
         return null;
+    }
+
+    private static ImageWriteParam getImageWriteParam(String format, ImageWriter writer, float quality) {
+        ImageWriteParam writeParam;
+        if ("webp".equals(format)) {
+            // WebP specific configuration
+            writeParam = new WebPWriteParam(writer.getLocale());
+            writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            writeParam.setCompressionType(writeParam.getCompressionTypes()[WebPWriteParam.LOSSY_COMPRESSION]);
+            writeParam.setCompressionQuality(quality);
+        } else if ("jpeg".equals(format)) {
+            // JPEG specific configuration
+            writeParam = writer.getDefaultWriteParam();
+            writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            writeParam.setCompressionQuality(quality);
+        } else {
+            throw new IllegalArgumentException("Unsupported format: " + format);
+        }
+        return writeParam;
     }
 
     public byte[] createZipFile(List<ProcessedImage> compressedImages) throws IOException {
@@ -107,9 +115,9 @@ public class ImageService {
         return zipByteArrayOutputStream.toByteArray();
     }
 
-    private static String changeFileName(String originalFileName){
+    private static String changeFileName(String originalFileName, String format){
 
-        String fileType = ".webp";
+        String fileType = "." + format;
         String fileNameExtract = "default";
 
         // Define the regular expression pattern
@@ -123,8 +131,7 @@ public class ImageService {
             // Extract the filename without extension
             fileNameExtract = matcher.group(1);
         } else {
-            System.out.println("No match found");
-        }
+            logger.info("Not match filename pattern");}
 
         String newFileName = fileNameExtract + fileType;
         return newFileName;
