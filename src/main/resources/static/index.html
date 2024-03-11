@@ -23,7 +23,7 @@
             background-repeat: no-repeat; /* This will prevent the image from repeating */
         }
 
-        h2 {
+        h3 {
             background-image: linear-gradient(to right, #0284c7, #ea580c);
             color: white; /* You might want to change the text color for better readability */
             -webkit-background-clip: text; /* Clips the background to the text for WebKit browsers */
@@ -32,22 +32,23 @@
             background-color: rgba(255, 255, 255, 0.7); /* Semi-transparent white */
             backdrop-filter: blur(5px); /* Frosted glass effect */
 
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
             text-align: center;
         }
         .row {
-            margin-top:15px;
+            margin-top:10px;
         }
         .my-container {
-            margin-top:100px;
+            margin-top:50px;
             margin-left:auto;
             margin-right:auto;
-            max-width: 1000px;
-            font-size: 24px;
+            max-width: 800px;
+            max-height: 1000px;
+            font-size: 14px;
 
             background-color: #f8f9fa;
-            padding: 30px;
+            padding: 15px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
@@ -117,15 +118,15 @@
         }
 
         #result {
-            margin-top: 20px;
+            margin-top: 15px;
             max-width: 100%; /* Set a maximum width for the result div */
             overflow: hidden; /* Hide any overflow content */
             width: auto;
         }
 
         #result img {
-            max-width: 100%; /* Set a maximum width for the image */
-            height: 400px; /* Allow the height to adjust proportionally */
+            max-width: 75%; /* Set a maximum width for the image */
+            height: 250px; /* Allow the height to adjust proportionally */
             display: block; /* Remove extra space below inline elements */
             margin: 0 auto; /* Center the image within its container */
         }
@@ -169,7 +170,7 @@
 <body>
 <div class="my-container">
 
-    <h2>Image Conversion</h2>
+    <h3> WEBP Image Conversion </h3>
 
     <form class="form-inline" action="/api/upload" method="post" enctype="multipart/form-data">
 

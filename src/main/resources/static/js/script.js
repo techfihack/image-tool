@@ -114,7 +114,7 @@ function singleConversion(formData){
             console.log("blob = " + JSON.stringify(blobData,null,2));
             console.log("blob is instance of " + blobData instanceof Blob)
             console.log("blob data size " + blobData.size);
-            if(blobData instanceof Blob && blobData.size > 5500) {
+            if(blobData instanceof Blob) {
                 // Create a data URL from the blob data
                 const imageUrl = URL.createObjectURL(blobData);
 
@@ -142,7 +142,16 @@ function singleConversion(formData){
                     // Remove the link from the body
                     document.body.removeChild(downloadLink);
                 });
+
                 resultDiv.appendChild(img);
+                const span = document.createElement('span');
+                span.innerHTML="Double click to download the image";
+                span.style.color="red";
+                span.style.fontSize="12px";
+                span.style.marginTop="5px";
+                span.style.marginLeft="auto";
+                span.style.marginRight="auto";
+                resultDiv.appendChild(span);
             }
         })
         .catch(error => alert('Error converting image:' + error));
