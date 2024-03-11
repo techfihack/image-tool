@@ -96,7 +96,10 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version> <!-- ensure this is compatible with your JDK version -->
 				<configuration>
+					<compilerArgument>-parameters</compilerArgument>
 					<release>17</release> <!-- set this to match your JDK version -->
+					<source>17</source> <!-- Replace with your Java source version -->
+					<target>17</target> <!-- Replace with your Java target version -->
 				</configuration>
 			</plugin>
 		</plugins>
