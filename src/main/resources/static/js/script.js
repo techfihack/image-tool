@@ -66,6 +66,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function convertImage() {
+
+    // Disable the button
+    $('#btn-convert-image').prop('disabled', true);
+
     // Get form values
     const format = document.getElementById('imageFormats').value;
     const compressQuality = document.getElementById('compressQuality').value;
@@ -92,6 +96,11 @@ function convertImage() {
 
     // Determine which API to call based on the number of files selected
     filesInput.files.length > 1 ? multiConversion(formData) : singleConversion(formData);
+
+    // Re-enable the button after 10 seconds
+    setTimeout(() => {
+        $('#btn-convert-image').prop('disabled', false);
+    }, 3000); // 3 seconds
 }
 
 function singleConversion(formData){
@@ -206,7 +215,7 @@ function updateFileList() {
     headerCell1.textContent = 'Filename';
 
     const headerCell2 = tableHeadRow.insertCell(1);
-    headerCell2.textContent = 'Height (in pixels)';
+    headerCell2.textContent = 'Resize height (in pixels)';
 
     // Append the table head to the table
     fileListElement.appendChild(tableHead);
