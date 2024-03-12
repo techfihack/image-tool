@@ -197,7 +197,48 @@
             border-color: #D3D3D3;
             color: #A9A9A9; /* lighter text color when disabled */
         }
-
+        .file-upload-wrapper {
+            margin-left:auto;
+            margin-right:auto;
+            position: relative;
+            height: 180px; /* Adjust as needed */
+            border: 3px dashed #6495ED;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+        }
+        .file-upload-wrapper::after {
+            content: 'Max file size 200MB. Supported formats: jpg, jpeg, png, pdf, gif';
+            font-size: 13px;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .file-upload-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-upload-button {
+            background: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .file-upload-button:hover {
+            background: #0056b3;
+        }
     </style>
 
 </head>
@@ -221,9 +262,11 @@
         <!-- Files -->
         <div class="row" >
             <div class="col-md-12">
-                <div class="form-group">
-                    <label class="form-label" for="files">Images (Maximum 10 files) : </label>
-                    <input class="form-control" type="file" id="files" name="files" accept="image/*" multiple onchange="updateFileList()" />
+                <div class="form-group file-upload-wrapper">
+                    <label for="files" class="form-label file-upload-button">
+                        Choose Files (Maximum 10 files)
+                    </label>
+                    <input class="form-control file-upload-input" id="files" type="file" name="files" accept="image/*" multiple onchange="updateFileList()">
                 </div>
             </div>
         </div>
@@ -272,214 +315,5 @@
 
 
 <script src="./js/script.js" ></script>
-<!--
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Document is ready
-
-        // Add an event listener to the range input
-        document.getElementById('compressQuality').addEventListener('input', function() {
-            // Update the value in the span element
-            document.getElementById('rangeValue').innerText = this.value + "%";
-        });
-
-
-        /*
-        document.getElementById('files').addEventListener('change', function(event) {
-            // Get the selected files
-            const files = event.target.files;
-
-            // Clear previously generated inputs
-            document.getElementById('height-div').innerHTML = '';
-
-            // Generate inputs based on the number of selected files
-            for (let i = 0; i < files.length; i++) {
-
-                const label = document.createElement('label');
-                label.className = 'form-label';
-                label.textContent = 'Resize Height for image (' + files[i].name + ')';
-
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.className = 'form-control';
-                input.name = 'heights[]';
-
-                // Create an Image object to get the original height
-                const img = new Image();
-                img.src = URL.createObjectURL(files[i]);
-                img.onload = function() {
-                    // Set the placeholder to the original height
-                    input.placeholder =  img.naturalHeight + ' pixels';
-                    input.value = img.naturalHeight;
-                };
-
-                document.getElementById('height-div').appendChild(label);
-                document.getElementById('height-div').appendChild(input);
-            }
-        });*/
-
-        // Fetch data from /api/image/format using the Fetch API
-        fetch('/api/image/formats')
-            .then(response => response.json())
-            .then(data => {
-                // Populate the select element with options
-                const selectElement = document.getElementById('imageFormats');
-
-                // Clear existing options
-                selectElement.innerHTML = '';
-
-                // Append options from the fetched data
-                data.forEach(format => {
-                    const option = document.createElement('option');
-                    option.value = format;
-                    option.text = format;
-                    selectElement.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Error fetching data:', error));
-    });
-
-    function convertImage() {
-        // Get form values
-        const format = document.getElementById('imageFormats').value;
-        const compressQuality = document.getElementById('compressQuality').value;
-        const filesInput = document.getElementById('files');
-
-        // Create a FormData object to send form data
-        const formData = new FormData();
-        formData.append('format', format);
-        formData.append('compressQuality', compressQuality);
-
-        // Append files to FormData
-        for (const file of filesInput.files) {
-            formData.append('files', file);
-        }
-
-        // Get all elements with the name 'heights[]'
-        const heightInputs = document.getElementsByName('heights[]');
-
-        // Loop through the NodeList and append values to FormData
-        for (let i = 0; i < heightInputs.length; i++) {
-            const height = heightInputs[i].value;
-            formData.append('heights[]', height);
-        }
-
-        // Determine which API to call based on the number of files selected
-        filesInput.files.length > 1 ? multiConversion(formData) : singleConversion(formData);
-    }
-
-    function singleConversion(formData){
-
-        // Make a request to /api/image/upload
-        fetch('/api/image/uploadSingle', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => {
-                // Check if the request was successful
-                if (!response.ok) {
-                    alert('Image conversion failed');
-                }
-                // Return the blob (binary) data
-                return response.blob();
-            })
-            .then(blobData => {
-
-                console.log("blob = " + JSON.stringify(blobData,null,2));
-                console.log("blob is instance of " + blobData instanceof Blob)
-                console.log("blob data size " + blobData.size);
-                if(blobData instanceof Blob && blobData.size > 5500) {
-                    // Create a data URL from the blob data
-                    const imageUrl = URL.createObjectURL(blobData);
-
-                    // Display the resulting image in the "result" div
-                    const resultDiv = document.getElementById('result');
-                    resultDiv.innerHTML = ''; // Clear previous content
-
-                    // Create an img element and set its source to the data URL of the resulting image
-                    const img = document.createElement('img');
-                    img.src = imageUrl;
-
-                    // Create a link element for downloading the image
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = imageUrl;
-                    downloadLink.download = 'processed-image.' + formData.get('format'); // You can customize the default filename
-
-                    // Attach a double-click event listener to the image
-                    img.addEventListener('dblclick', function () {
-                        // Append the link to the body
-                        document.body.appendChild(downloadLink);
-
-                        // Trigger a click on the link to initiate the download
-                        downloadLink.click();
-
-                        // Remove the link from the body
-                        document.body.removeChild(downloadLink);
-                    });
-                    resultDiv.appendChild(img);
-                }
-            })
-            .catch(error => alert('Error converting image:' + error));
-    }
-
-    function multiConversion(formData){
-
-        // Make a request to /api/image/upload
-        fetch('/api/image/thread/uploadMulti', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => {
-                // Check if the request was successful
-                if (!response.ok) {
-                    alert('Image conversion failed');
-                }
-                // Return the blob (binary) data
-                return response.arrayBuffer();
-            })
-            .then(data => {
-                if (data instanceof ArrayBuffer) {
-                    // Handle zip file response
-                    // Create a Blob from the ArrayBuffer and initiate download
-                    const blob = new Blob([data], { type: 'application/zip' });
-
-                    // Display the resulting image in the "result" div
-                    const downloadDiv = document.getElementById('downloadDiv');
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = URL.createObjectURL(blob);
-                    downloadLink.download = 'processed_images.zip';
-                    downloadDiv.appendChild(downloadLink);
-                    downloadLink.click();
-                    downloadDiv.removeChild(downloadLink);
-                }})
-            .catch(error => alert('Error converting image:' + error));
-    }
-
-    function updateFileList() {
-        const fileListElement = document.getElementById('fileList');
-        const files = document.getElementById('files').files;
-        fileListElement.innerHTML = ''; // Clear existing list
-        if (files.length > 10) {
-            alert('You can only select up to 10 files.');
-            return;
-        }
-        for (let i = 0; i < files.length; i++) {
-            const row = fileListElement.insertRow();
-            const cell1 = row.insertCell(0);
-            cell1.textContent = files[i].name;
-            const cell2 = row.insertCell(1);
-
-            const img = new Image();
-            img.src = URL.createObjectURL(files[i]);
-            img.onload = function() {
-                console.log("height " + i + ": " + img.naturalHeight);
-                cell2.innerHTML = `<input type="number" class="form-control" name="heights[]" placeholder="${img.naturalHeight + ' pixels'}" value="${img.naturalHeight}">`;
-            };
-        }
-    }
-
-</script>
--->
-
 </body>
 </html>
