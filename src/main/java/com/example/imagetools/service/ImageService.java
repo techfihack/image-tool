@@ -66,6 +66,7 @@ public class ImageService {
 
             // Read the compressed image from the file into a byte array if needed
             byte[] processedImageData = Files.readAllBytes(compressedFile.toPath());
+            logger.info("image format " + format.toUpperCase() + " conversion success!");
 
             return new ProcessedImage(newFileName, processedImageData);
 
@@ -87,6 +88,7 @@ public class ImageService {
             // JPEG specific configuration
             writeParam = writer.getDefaultWriteParam();
             writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            writeParam.setCompressionType(writeParam.getCompressionTypes()[WebPWriteParam.LOSSY_COMPRESSION]);
             writeParam.setCompressionQuality(quality);
         } else {
             throw new IllegalArgumentException("Unsupported format: " + format);

@@ -29,7 +29,7 @@ h3 {
     margin-top:50px;
     margin-left:auto;
     margin-right:auto;
-    margin-bottom:210px;
+    margin-bottom:100px;
     max-width: 800px;
     font-size: 14px;
 
@@ -221,13 +221,23 @@ input[type="number"] {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 .file-upload-button:hover {
     background: #0056b3;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3); /* Shadow for a "lifting" effect */
 }
 .bmc-btn-container{
-    margin-top:30px;
+    margin-bottom:125px;
     display: flex;
     justify-content: center;
+}
+#files:hover + label.file-upload-button {
+    background-color: #0066cc; /* A different shade of blue for demonstration */
+    color: #fff; /* Keep text color white */
+    border: 1px solid #0056b3; /* Add a border if you like */
+    /* Any other styles you want to change on hover */
+    box-shadow: 0px 8px 15px rgba(0,0,0,0.1); /* Add a subtle shadow */
+    transform: translateY(-2px); /* Slightly move the button up to give a 'press' effect */
+    transition: all 0.2s; /* Smooth transition for all properties */
 }

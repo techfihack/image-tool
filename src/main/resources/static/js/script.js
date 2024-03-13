@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data.forEach(format => {
                 const option = document.createElement('option');
                 option.value = format;
-                option.text = format;
+                option.text = format.toUpperCase();
                 selectElement.appendChild(option);
             });
         })
