@@ -26,9 +26,10 @@ h3 {
     margin-top:10px;
 }
 .my-container {
-    margin-top:30px;
+    margin-top:50px;
     margin-left:auto;
     margin-right:auto;
+    margin-bottom:210px;
     max-width: 800px;
     font-size: 14px;
 
