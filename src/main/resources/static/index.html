@@ -7,6 +7,10 @@
 
     <!-- jQuery from CDN -->
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <!-- Bootstrap CSS from CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/jpg" sizes="16x16" href="./image/cat.jpg">
+    <link rel="stylesheet" href="./style/style.css">
     <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
             data-name="bmc-button"
             data-slug="dorashad0w"
@@ -18,245 +22,6 @@
             data-font-color="#ffffff"
             data-coffee-color="#FFDD00" >
     </script>
-
-    <!-- Bootstrap CSS from CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="icon" type="image/jpg" sizes="16x16" href="./image/cat.jpg">
-    <style>
-
-        html {
-            height: 100%;
-        }
-        body {
-            background-image: url('./image/sky.webp');
-            background-size: cover; /* This will ensure that your background covers the whole page */
-            background-position: center; /* This centers the background image */
-            background-repeat: no-repeat; /* This will prevent the image from repeating */
-        }
-
-        h3 {
-            background-image: linear-gradient(to right, #0284c7, #ea580c);
-            color: white; /* You might want to change the text color for better readability */
-            -webkit-background-clip: text; /* Clips the background to the text for WebKit browsers */
-            background-clip: text; /* Clips the background to the text for other browsers */
-            -webkit-text-fill-color: transparent; /* Makes the text color transparent for WebKit browsers */
-            background-color: rgba(255, 255, 255, 0.7); /* Semi-transparent white */
-            backdrop-filter: blur(5px); /* Frosted glass effect */
-
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .row {
-            margin-top:10px;
-        }
-        .my-container {
-            margin-top:50px;
-            margin-left:auto;
-            margin-right:auto;
-            max-width: 800px;
-            max-height: 1000px;
-            font-size: 14px;
-
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .form-label {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #495057;
-            margin-bottom: 8px;
-        }
-        .label-compress-quality{
-            padding: 5px;
-            border-radius: 5px;
-            display: inline-block;
-        }
-        .form-control {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            box-sizing: border-box;
-            margin-bottom: 16px;
-        }
-        .submit-button {
-            background-color: #28a745;
-            color: #fff;
-            padding: 12px 20px;
-            font-size: 1.2rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: center;
-        }
-        .submit-button:hover {
-            background-color: #218838;
-        }
-        #compressQuality {
-            width: 100%;
-            appearance: none;
-            margin-top:5px;
-            margin-bottom:5px;
-            height: 10px;
-            background-color: #ddd;
-            border-radius: 5px;
-            outline: none;
-            padding: 5px;
-            transition: background-color 0.3s ease;
-        }
-        #compressQuality::-webkit-slider-thumb {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: #4CAF50;
-            cursor: pointer;
-        }
-        #compressQuality::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: #4CAF50;
-            cursor: pointer;
-        }
-        #rangeValue {
-            display: inline-block;
-            font-size: 18px;
-            padding: 10px;
-            color: black;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        #result {
-            margin-top: 15px;
-            max-width: 100%; /* Set a maximum width for the result div */
-            overflow: hidden; /* Hide any overflow content */
-            width: auto;
-        }
-
-        #result img {
-            max-width: 75%; /* Set a maximum width for the image */
-            height: 250px; /* Allow the height to adjust proportionally */
-            display: block; /* Remove extra space below inline elements */
-            margin: 0 auto; /* Center the image within its container */
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed; /* This ensures the table respects the given width */
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:hover {
-            background-color: #f5f5f5;
-        }
-        .file-name {
-            width: 60%;
-            word-wrap: break-word; /* Ensure long names do not overflow */
-        }
-        .height-input {
-            width: 40%; /* This gives more space to the file name */
-        }
-        input[type="number"] {
-            width: 100%;
-            padding: 6px;
-            margin-top: 4px; /* For spacing between rows */
-            box-sizing: border-box; /* Includes padding and border in the element's total width and height */
-        }
-        .input-label {
-            margin: 0;
-        }
-        /* Slider Track */
-        #compressQuality {
-            /* other styles... */
-            background-color: #ADD8E6; /* light blue background */
-        }
-
-        /* Slider Thumb */
-        #compressQuality::-webkit-slider-thumb {
-            /* other styles... */
-            background-color: #6495ED; /* cornflower blue thumb */
-        }
-        #compressQuality::-moz-range-thumb {
-            /* other styles... */
-            background-color: #6495ED; /* cornflower blue thumb */
-        }
-
-        /* Convert Button Style */
-        #btn-convert-image {
-            background-color: #6495ED; /* calm blue background */
-            border-color: #6495ED;
-        }
-
-        #btn-convert-image:hover {
-            background-color: #4169E1; /* slightly darker blue on hover */
-            border-color: #4169E1;
-        }
-
-        #btn-convert-image:disabled {
-            background-color: #D3D3D3; /* grey background when disabled */
-            border-color: #D3D3D3;
-            color: #A9A9A9; /* lighter text color when disabled */
-        }
-        .file-upload-wrapper {
-            margin-left:auto;
-            margin-right:auto;
-            position: relative;
-            height: 180px; /* Adjust as needed */
-            border: 3px dashed #6495ED;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            overflow: hidden;
-        }
-        .file-upload-wrapper::after {
-            content: 'Max file size 100MB. Supported formats: jpg, jpeg, png, pdf, gif';
-            font-size: 13px;
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .file-upload-input {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-        .file-upload-button {
-            background: #007bff;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-        .file-upload-button:hover {
-            background: #0056b3;
-        }
-        .bmc-btn-container{
-            margin-top:50px;
-            display: flex;
-            justify-content: center;
-        }
-    </style>
 
 </head>
 <body>
@@ -330,8 +95,18 @@
     <div id="result" ></div>
     <div id="downloadDiv" ></div>
 </div>
+</body>
 
+<footer style="background-color: #333; color: white; text-align: center; padding: 20px 0; position: absolute; bottom: 0; width: 100%;">
+    <div>
+        <p>&copy; 2024 doramiao. All rights reserved.</p>
+        <p>
+            <a href="/about" style="color: white; margin: 0 10px;">About Us</a> |
+            <a href="/privacy" style="color: white; margin: 0 10px;">Privacy Policy</a> |
+            <a href="/terms" style="color: white; margin: 0 10px;">Terms of Use</a>
+        </p>
+        <p>Support us: <a href="https://www.buymeacoffee.com/dorashad0w" style="color: white;">Buy Me A Coffee</a></p>
+    </div>
+</footer>
 
 <script src="./js/script.js" ></script>
-</body>
-</html>
