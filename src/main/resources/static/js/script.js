@@ -1,4 +1,3 @@
-console.log("hello js");
 
 document.addEventListener('DOMContentLoaded', function() {
     // Document is ready
@@ -74,6 +73,16 @@ function convertImage() {
     const format = document.getElementById('imageFormats').value;
     const compressQuality = document.getElementById('compressQuality').value;
     const filesInput = document.getElementById('files');
+
+    // Check file sizes before proceeding
+    const maxFileSize = 100 * 1024 * 1024; // 100MB in bytes
+    for (const file of filesInput.files) {
+        if (file.size > maxFileSize) {
+            alert('One or more files are too large. Please select files smaller than 100MB.');
+            $("#btn-convert-image").prop('disabled', false); // Re-enable the button
+            return; // Stop the function
+        }
+    }
 
     // Create a FormData object to send form data
     const formData = new FormData();
