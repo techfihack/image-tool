@@ -11,7 +11,7 @@ import java.util.concurrent.Callable;
 
 public class ImageConversionTask implements Callable<ProcessedImage> {
     private MultipartFile file;
-    private int height;
+    private int width;
     private int compressQuality;
 
     private ImageService imageService;
@@ -20,21 +20,24 @@ public class ImageConversionTask implements Callable<ProcessedImage> {
 
     private String format;
 
+    private boolean stripMetadata;
 
-    public ImageConversionTask(ImageService imageService, MultipartFile file, int height, int compressQuality, String taskUUID, String format) {
+
+    public ImageConversionTask(ImageService imageService, MultipartFile file, int width, int compressQuality, String taskUUID, String format, boolean stripMetadata) {
         this.file = file;
-        this.height = height;
+        this.width = width;
         this.compressQuality = compressQuality;
         this.imageService = imageService;
         this.taskUUID = taskUUID;
         this.format = format;
+        this.stripMetadata = stripMetadata;
     }
 
     @Override
     public ProcessedImage call() throws Exception {
         //System.out.println("task ID " + taskUUID + " started ");
         BufferedImage originalImage = ImageIO.read(file.getInputStream());
-        ProcessedImage processedImage = imageService.convertImgToWebp(originalImage, file.getOriginalFilename(), height, compressQuality, format);
+        ProcessedImage processedImage = imageService.compressImg(originalImage, file, file.getOriginalFilename(), width, compressQuality, format, stripMetadata);
         processedImage.setTaskUUID(taskUUID);
         //System.out.println("task ID " + taskUUID + " is completed");
         return processedImage;

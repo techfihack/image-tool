@@ -35,7 +35,7 @@
             <div class="col-md-12">
                 <div class="form-group file-upload-wrapper">
                     <label for="files" class="form-label file-upload-button">
-                        Choose Files (Maximum 10 files)
+                        Choose Files (Maximum 50 files)
                     </label>
                     <input class="form-control file-upload-input" id="files" type="file" name="files" accept="image/*" multiple onchange="updateFileList()">
                 </div>
@@ -58,7 +58,6 @@
                     -->
                 </div>
             </div>
-
         </div>
 
         <!-- Compress Ratio -->
@@ -67,7 +66,17 @@
                 <div class="form-group">
                     <label class="form-label label-compress-quality" for="compressQuality">Compress Ratio (%) : </label>
                     <span id="rangeValue">92%</span>
-                    <input id="compressQuality" type="range" min="1" max="100" step="1" value="92">
+                    <input id="compressQuality" type="range" min="20" max="100" step="1" value="92">
+                </div>
+            </div>
+        </div>
+
+        <!-- Strip Metadata Option -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group strip-metadata-container">
+                    <input type="checkbox" id="stripMetadata" name="stripMetadata" class="strip-metadata-checkbox">
+                    <label for="stripMetadata" class="strip-metadata-label">Strip Metadata</label>
                 </div>
             </div>
         </div>

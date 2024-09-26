@@ -6,18 +6,20 @@ import com.luciad.imageio.webp.WebPWriteParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
+import javax.imageio.*;
+import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.FileImageOutputStream;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,13 +31,13 @@ public class ImageService {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageService.class);
 
-    public ProcessedImage convertImgToWebp(BufferedImage originalImage, String originalFilename, Integer targetHeight, Integer compressQuality, String format){
+    public ProcessedImage compressImg(BufferedImage originalImage, MultipartFile originalFile, String originalFilename, Integer targetWidth, Integer compressQuality, String format, boolean stripeMetadata){
 
-        int newHeight = targetHeight != null ? targetHeight : originalImage.getHeight();
+        int newWidth = targetWidth != null ? targetWidth : originalImage.getWidth();
         float quality = compressQuality != null ? (float)(compressQuality / 100.00) : 0.1f;
 
         double aspectRatio = (double) originalImage.getWidth() / originalImage.getHeight();
-        int newWidth = (int)(newHeight * aspectRatio);
+        int newHeight = (int)(newWidth * aspectRatio);
 
         try {
             if (quality <= 0 || quality > 1) {
@@ -62,7 +64,49 @@ public class ImageService {
             // Save the compressed image to a file
             File compressedFile = new File(newFileName);
             writer.setOutput(new FileImageOutputStream(compressedFile));
-            writer.write(null, new IIOImage(resizedImage, null, null), writeParam);
+
+            if (stripeMetadata) {
+                // Strip metadata
+                writer.write(null, new IIOImage(resizedImage, null, null), writeParam); // No metadata
+            } else {
+                // Retain metadata
+                // Create ImageInputStream , Assuming 'originalFile' is a MultipartFile
+                InputStream inputStream = originalFile.getInputStream();
+                ImageInputStream iis = ImageIO.createImageInputStream(inputStream);
+                if (iis == null) {
+                    throw new IllegalStateException("ImageInputStream could not be created.");
+                }
+
+                // Safely split the filename to extract the extension (file type)
+                String[] fileNameParts = originalFilename.split("\\.");
+                String originalFileType = "";
+
+                // Check if the split results in at least two parts (i.e., filename and extension)
+                if (fileNameParts.length > 1) {
+                    originalFileType = fileNameParts[fileNameParts.length - 1]; // Get the last part as the file extension
+                } else {
+                    throw new IllegalStateException("Invalid file name: no extension found in " + originalFilename);
+                }
+                logger.info("original file type " + originalFileType);
+
+                // Get an ImageReader for the format
+                ImageReader reader = ImageIO.getImageReadersByFormatName(originalFileType).next();
+                if (reader == null) {
+                    throw new IllegalStateException("No ImageReader found for format: " + originalFileType);
+                }
+
+                reader.setInput(iis, true);
+
+                // Check and get metadata
+                IIOMetadata metadata = reader.getImageMetadata(0);
+                //if (metadata == null) {
+                //    throw new IllegalStateException("No metadata found for the image.");
+                //}
+
+                // Write the image with metadata
+                writer.write(null, new IIOImage(resizedImage, null, metadata), writeParam);
+            }
+            writer.dispose();
 
             // Read the compressed image from the file into a byte array if needed
             byte[] processedImageData = Files.readAllBytes(compressedFile.toPath());

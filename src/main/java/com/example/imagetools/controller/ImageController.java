@@ -47,20 +47,20 @@ public class ImageController {
     }
 
     @PostMapping("/uploadSingle")
-    public ResponseEntity processSingleImage(@RequestParam("files") List<MultipartFile> files,  @RequestParam("heights[]") List<Integer> heights, Integer compressQuality, String format) {
+    public ResponseEntity processSingleImage(@RequestParam("files") List<MultipartFile> files,  @RequestParam("widths[]") List<Integer> widths, Integer compressQuality, String format, boolean stripMetadata) {
 
         if (files.size() != 1) {
             return new ResponseEntity<>("Please select single image to process", HttpStatus.BAD_REQUEST);
         }
 
-        if (heights.size() != 1) {
+        if (widths.size() != 1) {
             return new ResponseEntity<>("Please provide a single height value", HttpStatus.BAD_REQUEST);
         }
 
         // single file conversion , return image
         try {
             BufferedImage originalImage = ImageIO.read(files.get(0).getInputStream());
-            ProcessedImage processedImage = imageService.convertImgToWebp(originalImage, files.get(0).getOriginalFilename(), heights.get(0), compressQuality, format);
+            ProcessedImage processedImage = imageService.compressImg(originalImage, files.get(0), files.get(0).getOriginalFilename(), widths.get(0), compressQuality, format, stripMetadata);
             format = format != null ? format : "webp";      // default is webp type image
             // Create HttpHeaders with appropriate content type and length
             HttpHeaders headers = new HttpHeaders();
@@ -77,9 +77,9 @@ public class ImageController {
     }
 
     @PostMapping("/uploadMulti")
-    public ResponseEntity processMultiImages(@RequestParam("files") List<MultipartFile> files, @RequestParam("heights[]") List<Integer> heights, Integer compressQuality, String format) {
+    public ResponseEntity processMultiImages(@RequestParam("files") List<MultipartFile> files, @RequestParam("widths[]") List<Integer> widths, Integer compressQuality, String format, boolean stripMetadata) {
 
-        if(files.size() != heights.size()){
+        if(files.size() != widths.size()){
             return new ResponseEntity<>("Files and heights input does not match", HttpStatus.BAD_REQUEST);
         }
 
@@ -90,7 +90,7 @@ public class ImageController {
             for (int i = 0; i < files.size() ; i++) {
                 MultipartFile file = files.get(i);
                 BufferedImage originalImage = ImageIO.read(file.getInputStream());
-                ProcessedImage processedImage = imageService.convertImgToWebp(originalImage, file.getOriginalFilename(), heights.get(i), compressQuality, format);
+                ProcessedImage processedImage = imageService.compressImg(originalImage, file, file.getOriginalFilename(), widths.get(i), compressQuality, format, stripMetadata);
                 processedImages.add(processedImage);
             }
 
@@ -112,9 +112,9 @@ public class ImageController {
 
 
     @PostMapping("/thread/uploadMulti")
-    public ResponseEntity processMultiImagesThreading(@RequestParam("files") List<MultipartFile> files, @RequestParam("heights[]") List<Integer> heights, Integer compressQuality, String format) {
+    public ResponseEntity processMultiImagesThreading(@RequestParam("files") List<MultipartFile> files, @RequestParam("widths[]") List<Integer> widths, Integer compressQuality, String format, boolean stripMetadata) {
 
-        if (files.size() != heights.size()) {
+        if (files.size() != widths.size()) {
             return new ResponseEntity<>("Files and heights input does not match", HttpStatus.BAD_REQUEST);
         }
 
@@ -127,7 +127,7 @@ public class ImageController {
             for (int i = 0; i < files.size(); i++) {
                 // Generate a random UUID
                 UUID taskUUID = UUID.randomUUID();
-                ImageConversionTask conversionTask = new ImageConversionTask(imageService,files.get(i), heights.get(i), compressQuality,taskUUID.toString(), format);
+                ImageConversionTask conversionTask = new ImageConversionTask(imageService,files.get(i), widths.get(i), compressQuality,taskUUID.toString(), format, stripMetadata);
                 Future<ProcessedImage> future = executorService.submit(conversionTask);
                 futures.add(future);
 

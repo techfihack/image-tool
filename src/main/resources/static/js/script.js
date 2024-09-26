@@ -73,6 +73,7 @@ function convertImage() {
     const format = document.getElementById('imageFormats').value;
     const compressQuality = document.getElementById('compressQuality').value;
     const filesInput = document.getElementById('files');
+    const stripMetadata = document.getElementById('stripMetadata').checked;  // Get checkbox value
 
     // Check file sizes before proceeding
     const maxFileSize = 100 * 1024 * 1024; // 100MB in bytes
@@ -88,19 +89,20 @@ function convertImage() {
     const formData = new FormData();
     formData.append('format', format);
     formData.append('compressQuality', compressQuality);
+    formData.append('stripMetadata', stripMetadata);  // Append the checkbox value
 
     // Append files to FormData
     for (const file of filesInput.files) {
         formData.append('files', file);
     }
 
-    // Get all elements with the name 'heights[]'
-    const heightInputs = document.getElementsByName('heights[]');
+    // Get all elements with the name 'widths[]'
+    const widthInputs = document.getElementsByName('width[]');
 
     // Loop through the NodeList and append values to FormData
-    for (let i = 0; i < heightInputs.length; i++) {
-        const height = heightInputs[i].value;
-        formData.append('heights[]', height);
+    for (let i = 0; i < widthInputs.length; i++) {
+        const width = widthInputs[i].value;
+        formData.append('widths[]', width);
     }
 
     // Determine which API to call based on the number of files selected
@@ -224,7 +226,10 @@ function updateFileList() {
     headerCell1.textContent = 'Filename';
 
     const headerCell2 = tableHeadRow.insertCell(1);
-    headerCell2.textContent = 'Resize height (in pixels)';
+    headerCell2.textContent = 'Resized width (in pixels)';
+
+    const headerCell3 = tableHeadRow.insertCell(2);
+    headerCell3.textContent = 'Resized height (in pixels)';
 
     // Append the table head to the table
     fileListElement.appendChild(tableHead);
@@ -233,8 +238,8 @@ function updateFileList() {
     const tableBody = document.createElement('tbody');
     fileListElement.appendChild(tableBody);
 
-    if (files.length > 10) {
-        alert('You can only select up to 10 files.');
+    if (files.length > 50) {
+        alert('You can only select up to 50 files.');
         return;
     }
 
@@ -247,11 +252,29 @@ function updateFileList() {
         const img = new Image();
         img.src = URL.createObjectURL(files[i]);
         img.onload = function() {
-            console.log("height " + i + ": " + img.naturalHeight);
-            cell2.innerHTML =
-                `<input type="number" class="form-control" name="heights[]" ` +
-                `id="height${i}" placeholder="${img.naturalHeight} pixels" ` +
-                `value="${img.naturalHeight}">`
+
+            const aspectRatio = img.naturalWidth / img.naturalHeight;
+            console.log("width " + img.naturalWidth + " : " + img.naturalHeight);
+
+            // Insert width input field
+            cell2.innerHTML = `
+            <input type="number" class="form-control width-input" name="width[]" 
+                id="width${i}" placeholder="${img.naturalWidth} pixels" value="${img.naturalWidth}" data-aspect-ratio="${aspectRatio}">`;
+
+            // Create a new cell for the height input (not editable, just showing calculated height)
+            const cell3 = row.insertCell(2);
+            cell3.innerHTML = `
+            <input type="number" class="form-control" id="height${i}" value="${img.naturalHeight}" readonly>`;
+
+            // Add event listener to the width input to recalculate the height on change
+            const widthInput = document.getElementById(`width${i}`);
+            const heightInput = document.getElementById(`height${i}`);
+
+            widthInput.addEventListener('input', function () {
+                const newWidth = this.value;
+                const newHeight = Math.round(newWidth / aspectRatio);
+                heightInput.value = newHeight;
+            });
         };
     }
 }

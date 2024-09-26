@@ -241,3 +241,47 @@ input[type="number"] {
     transform: translateY(-2px); /* Slightly move the button up to give a 'press' effect */
     transition: all 0.2s; /* Smooth transition for all properties */
 }
+
+/* Styling for the Strip Metadata Checkbox and Label */
+.strip-metadata-container {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.strip-metadata-checkbox {
+    appearance: none; /* Remove default styles */
+    width: 20px;
+    height: 20px;
+    border: 2px solid #4CAF50;
+    border-radius: 4px;
+    margin-right: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.strip-metadata-checkbox:checked {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+.strip-metadata-checkbox:checked::after {
+    content: '✔';
+    position: absolute;
+    top: 0;
+    left: 3px;
+    color: white;
+    font-size: 14px;
+}
+
+.strip-metadata-label {
+    font-size: 1.1rem;
+    color: #495057;
+    font-weight: bold;
+    cursor: pointer; /* Change cursor to pointer when hovering over the label */
+}
+
+.strip-metadata-container:hover .strip-metadata-checkbox {
+    border-color: #2e8b57; /* Darker green on hover */
+}
