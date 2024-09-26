@@ -47,57 +47,81 @@ public class ImageController {
     }
 
     @PostMapping("/uploadSingle")
-    public ResponseEntity processSingleImage(@RequestParam("files") List<MultipartFile> files,  @RequestParam("widths[]") List<Integer> widths, Integer compressQuality, String format, boolean stripMetadata) {
+    public ResponseEntity processSingleImage(
+            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam("widths[]") List<Integer> widths,
+            @RequestParam("compressQuality") Integer compressQuality,
+            @RequestParam("format") String format,
+            @RequestParam("stripMetadata") boolean stripMetadata) {
 
         if (files.size() != 1) {
-            return new ResponseEntity<>("Please select single image to process", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Please select a single image to process", HttpStatus.BAD_REQUEST);
         }
 
         if (widths.size() != 1) {
             return new ResponseEntity<>("Please provide a single height value", HttpStatus.BAD_REQUEST);
         }
 
-        // single file conversion , return image
         try {
-            BufferedImage originalImage = ImageIO.read(files.get(0).getInputStream());
-            ProcessedImage processedImage = imageService.compressImg(originalImage, files.get(0), files.get(0).getOriginalFilename(), widths.get(0), compressQuality, format, stripMetadata);
-            format = format != null ? format : "webp";      // default is webp type image
-            // Create HttpHeaders with appropriate content type and length
+            MultipartFile file = files.get(0);
+            BufferedImage originalImage = ImageIO.read(file.getInputStream());
+            ProcessedImage processedImage = imageService.compressImg(
+                    originalImage,
+                    file,
+                    file.getOriginalFilename(),
+                    widths.get(0),
+                    compressQuality,
+                    format,
+                    stripMetadata
+            );
+
+            // Set response headers and return image as byte[]
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("image/" + format));
             headers.setContentLength(processedImage.getFileImage().length);
-
-            // Return ResponseEntity with processed image data
             return new ResponseEntity<>(processedImage.getFileImage(), headers, HttpStatus.OK);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Error processing image", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/uploadMulti")
-    public ResponseEntity processMultiImages(@RequestParam("files") List<MultipartFile> files, @RequestParam("widths[]") List<Integer> widths, Integer compressQuality, String format, boolean stripMetadata) {
 
-        if(files.size() != widths.size()){
-            return new ResponseEntity<>("Files and heights input does not match", HttpStatus.BAD_REQUEST);
+    @PostMapping("/uploadMulti")
+    public ResponseEntity processMultiImages(
+            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam("widths[]") List<Integer> widths,
+            @RequestParam("compressQuality") Integer compressQuality,
+            @RequestParam("format") String format,
+            @RequestParam("stripMetadata") boolean stripMetadata) {
+
+        if (files.size() != widths.size()) {
+            return new ResponseEntity<>("Files and heights input do not match", HttpStatus.BAD_REQUEST);
         }
 
         try {
             List<ProcessedImage> processedImages = new ArrayList<>();
 
-            // process each image
-            for (int i = 0; i < files.size() ; i++) {
+            for (int i = 0; i < files.size(); i++) {
                 MultipartFile file = files.get(i);
                 BufferedImage originalImage = ImageIO.read(file.getInputStream());
-                ProcessedImage processedImage = imageService.compressImg(originalImage, file, file.getOriginalFilename(), widths.get(i), compressQuality, format, stripMetadata);
+                ProcessedImage processedImage = imageService.compressImg(
+                        originalImage,
+                        file,
+                        file.getOriginalFilename(),
+                        widths.get(i),
+                        compressQuality,
+                        format,
+                        stripMetadata
+                );
                 processedImages.add(processedImage);
             }
 
-            // Create a zip file containing processed images
+            // Create zip file in memory
             byte[] zipFile = imageService.createZipFile(processedImages);
 
-            // Set response headers
+            // Set response headers for zip file
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.setContentDispositionFormData("attachment", "processed_images.zip");
@@ -105,7 +129,7 @@ public class ImageController {
             return new ResponseEntity<>(zipFile, headers, HttpStatus.OK);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Error processing multiple images", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

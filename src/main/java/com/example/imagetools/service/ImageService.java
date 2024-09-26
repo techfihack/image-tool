@@ -10,16 +10,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.*;
 import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,15 +59,19 @@ public class ImageService {
             String newFileName = changeFileName(originalFilename,format);
 
             // Save the compressed image to a file
-            File compressedFile = new File(newFileName);
-            writer.setOutput(new FileImageOutputStream(compressedFile));
+            // File compressedFile = new File(newFileName);
+            // writer.setOutput(new FileImageOutputStream(compressedFile));
+
+            // Use ByteArrayOutputStream instead of writing to a file
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
+            writer.setOutput(ios);
 
             if (stripeMetadata) {
                 // Strip metadata
                 writer.write(null, new IIOImage(resizedImage, null, null), writeParam); // No metadata
             } else {
                 // Retain metadata
-                // Create ImageInputStream , Assuming 'originalFile' is a MultipartFile
                 InputStream inputStream = originalFile.getInputStream();
                 ImageInputStream iis = ImageIO.createImageInputStream(inputStream);
                 if (iis == null) {
@@ -99,17 +100,21 @@ public class ImageService {
 
                 // Check and get metadata
                 IIOMetadata metadata = reader.getImageMetadata(0);
-                //if (metadata == null) {
-                //    throw new IllegalStateException("No metadata found for the image.");
-                //}
-
-                // Write the image with metadata
-                writer.write(null, new IIOImage(resizedImage, null, metadata), writeParam);
+                if (metadata == null) {
+                    writer.write(null, new IIOImage(resizedImage, null, null), writeParam);
+                }else{
+                    writer.write(null, new IIOImage(resizedImage, null, metadata), writeParam);
+                }
             }
-            writer.dispose();
 
-            // Read the compressed image from the file into a byte array if needed
-            byte[] processedImageData = Files.readAllBytes(compressedFile.toPath());
+            // Flush and close the streams
+            ios.flush();
+            writer.dispose();
+            ios.close();
+
+            // Convert the ByteArrayOutputStream to byte[]
+            byte[] processedImageData = baos.toByteArray();
+            baos.close(); // Close the ByteArrayOutputStream
             logger.info("image format " + format.toUpperCase() + " conversion success!");
 
             return new ProcessedImage(newFileName, processedImageData);
