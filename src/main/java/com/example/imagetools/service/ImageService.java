@@ -89,7 +89,7 @@ public class ImageService {
     }
 
     private BufferedImage resizeImage(BufferedImage originalImage, int newWidth, int newHeight) {
-        BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
+        BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = resizedImage.createGraphics();
         g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
         g2d.dispose();
@@ -151,7 +151,6 @@ public class ImageService {
             // JPEG specific configuration
             writeParam = writer.getDefaultWriteParam();
             writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-            writeParam.setCompressionType(writeParam.getCompressionTypes()[WebPWriteParam.LOSSY_COMPRESSION]);
             writeParam.setCompressionQuality(quality);
         } else {
             throw new IllegalArgumentException("Unsupported format: " + format);
