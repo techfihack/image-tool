@@ -21,7 +21,7 @@
     <form class="form-inline" action="/api/upload" method="post" enctype="multipart/form-data">
 
         <!-- Files -->
-        <div class="row">
+        <div class="row mb-3">
             <div class="col-md-12">
                 <div class="form-group file-upload-wrapper">
                     <label for="files" class="form-label file-upload-button">
@@ -33,7 +33,7 @@
         </div>
 
         <!-- Format (moved below file selection) -->
-        <div class="row">
+        <div class="row mb-2">
             <div class="col-md-12">
                 <div class="form-group">
                     <label class="form-label" for="imageFormats">Conversion Format : </label>
@@ -42,38 +42,25 @@
             </div>
         </div>
 
-        <div class="row">
-            <table id="fileList">
+        <div class="row mb-2">
+            <table id="fileList" class="table table-bordered">
                 <!-- Dynamically filled rows will go here -->
             </table>
         </div>
 
-        <!-- Apply to all, Width, and Height inputs -->
-        <div class="row">
+        <!-- Apply To All, Width input -->
+        <div class="row mb-3">
             <div class="col-md-12">
                 <div class="form-group apply-to-all-container">
                     <input type="checkbox" id="applyToAll" name="applyToAll" class="apply-to-all-checkbox">
-                    <label for="applyToAll" class="apply-to-all-label">Apply to all</label>
+                    <label for="applyToAll" class="apply-to-all-label">Apply To All</label>
                     <input id="globalWidth" name="globalWidth" class="form-control" type="number" placeholder="Width" style="display: inline-block; width: 100px; margin-left: 10px;">
-                    <input id="globalHeight" name="globalHeight" class="form-control" type="number" placeholder="Height" style="display: inline-block; width: 100px; margin-left: 10px;">
-                </div>
-            </div>
-        </div>
-
-        <!-- Resize Height -->
-        <div class="row">
-            <div class="col-md-12">
-                <div class="form-group" id="height-div">
-                    <!--
-                   <label class="form-label"> Heights </label>
-                   <input id="height" name="heights" class="form-control" type="number" />
-                    -->
                 </div>
             </div>
         </div>
 
         <!-- Compress Ratio -->
-        <div class="row">
+        <div class="row mb-3">
             <div class="col-md-12">
                 <div class="form-group">
                     <label class="form-label label-compress-quality" for="compressQuality">Compress Ratio (%) : </label>
@@ -84,7 +71,7 @@
         </div>
 
         <!-- Strip Metadata Option -->
-        <div class="row">
+        <div class="row mb-3">
             <div class="col-md-12">
                 <div class="form-group strip-metadata-container">
                     <input type="checkbox" id="stripMetadata" name="stripMetadata" class="strip-metadata-checkbox">
@@ -93,9 +80,9 @@
             </div>
         </div>
 
-        <div class="row">
+        <div class="row mb-3">
             <div class="col-md-12">
-                <div class="form-group" style="text-align: center">
+                <div class="form-group text-center">
                     <button id="btn-convert-image" class="btn btn-primary submit-button" type="button" onclick="convertImage()" style="margin-top:10px">Convert</button>
                 </div>
             </div>
@@ -131,4 +118,3 @@
     </div>
 </footer>
 <script src="./js/script.js" ></script>
-

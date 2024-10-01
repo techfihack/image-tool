@@ -1,4 +1,3 @@
-
 html {
     height: 100%;
 }
@@ -8,6 +7,7 @@ body {
     background-position: center; /* This centers the background image */
     background-repeat: repeat-y; /* This will prevent the image from repeating */
 }
+
 
 h3 {
     background-image: linear-gradient(to right, #0284c7, #ea580c);
@@ -284,4 +284,92 @@ input[type="number"] {
 
 .strip-metadata-container:hover .strip-metadata-checkbox {
     border-color: #2e8b57; /* Darker green on hover */
+}
+
+/* Styling for Apply To All Checkbox and Label */
+.apply-to-all-container {
+    display: flex;
+    align-items: center;
+    margin-top: 5px; /* Reduced margin-top to make spacing smaller */
+}
+
+.apply-to-all-checkbox {
+    appearance: none; /* Remove default styles */
+    width: 20px;
+    height: 20px;
+    border: 2px solid #007bff;
+    border-radius: 4px;
+    margin-right: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.apply-to-all-checkbox:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.apply-to-all-checkbox:checked::after {
+    content: '✔';
+    position: absolute;
+    top: 0;
+    left: 3px;
+    color: white;
+    font-size: 14px;
+}
+
+.apply-to-all-label {
+    font-size: 1.1rem;
+    color: #495057;
+    font-weight: bold;
+    cursor: pointer; /* Change cursor to pointer when hovering over the label */
+}
+
+.apply-to-all-container:hover .apply-to-all-checkbox {
+    border-color: #0056b3; /* Darker blue on hover */
+}
+
+/* Improved Checkbox Styles */
+.strip-metadata-checkbox,
+.apply-to-all-checkbox {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #007bff;
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.strip-metadata-checkbox:checked,
+.apply-to-all-checkbox:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.strip-metadata-checkbox:checked::after,
+.apply-to-all-checkbox:checked::after {
+    content: '✔';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+}
+
+.strip-metadata-checkbox:hover,
+.apply-to-all-checkbox:hover {
+    border-color: #0056b3;
+}
+
+.strip-metadata-label,
+.apply-to-all-label {
+    font-size: 1.1rem;
+    color: #495057;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 10px;
 }
