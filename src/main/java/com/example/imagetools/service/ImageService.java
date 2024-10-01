@@ -1,6 +1,5 @@
 package com.example.imagetools.service;
 
-
 import com.example.imagetools.entity.ProcessedImage;
 import com.luciad.imageio.webp.WebPWriteParam;
 import org.slf4j.Logger;
@@ -14,6 +13,7 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,84 +28,37 @@ public class ImageService {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageService.class);
 
-    public ProcessedImage compressImg(BufferedImage originalImage, MultipartFile originalFile, String originalFilename, Integer targetWidth, Integer compressQuality, String format, boolean stripeMetadata){
-
+    public ProcessedImage compressImg(BufferedImage originalImage, MultipartFile originalFile, String originalFilename, Integer targetWidth, Integer compressQuality, String format, boolean stripeMetadata) {
         int newWidth = targetWidth != null ? targetWidth : originalImage.getWidth();
-        float quality = compressQuality != null ? (float)(compressQuality / 100.00) : 0.1f;
+        float quality = compressQuality != null ? (float) (compressQuality / 100.00) : 0.1f;
 
         double aspectRatio = (double) originalImage.getWidth() / originalImage.getHeight();
-        int newHeight = (int)(newWidth * aspectRatio);
+        int newHeight = (int) (newWidth / aspectRatio);
 
         try {
             if (quality <= 0 || quality > 1) {
                 throw new IOException("Please select compress quality from range 0 to 1");
             }
 
-            // Get an ImageWriter for the "image/webp" MIME type
+            // Resize the image
+            BufferedImage resizedImage = resizeImage(originalImage, newWidth, newHeight);
+
+            // Get an ImageWriter for the specified format
             ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/" + format).next();
-
-            //resize first then compress
-            BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
-
-            // Use the Graphics2D class to draw the resized image
-            Graphics2D g2d = resizedImage.createGraphics();
-            g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
-            g2d.dispose();
 
             // Create and configure the ImageWriteParam based on the format
             ImageWriteParam writeParam = getImageWriteParam(format, writer, quality);
 
             // Set new filename
-            String newFileName = changeFileName(originalFilename,format);
+            String newFileName = changeFileName(originalFilename, format);
 
-            // Save the compressed image to a file
-            // File compressedFile = new File(newFileName);
-            // writer.setOutput(new FileImageOutputStream(compressedFile));
-
-            // Use ByteArrayOutputStream instead of writing to a file
+            // Use ByteArrayOutputStream for in-memory processing
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
             writer.setOutput(ios);
 
-            if (stripeMetadata) {
-                // Strip metadata
-                writer.write(null, new IIOImage(resizedImage, null, null), writeParam); // No metadata
-            } else {
-                // Retain metadata
-                InputStream inputStream = originalFile.getInputStream();
-                ImageInputStream iis = ImageIO.createImageInputStream(inputStream);
-                if (iis == null) {
-                    throw new IllegalStateException("ImageInputStream could not be created.");
-                }
-
-                // Safely split the filename to extract the extension (file type)
-                String[] fileNameParts = originalFilename.split("\\.");
-                String originalFileType = "";
-
-                // Check if the split results in at least two parts (i.e., filename and extension)
-                if (fileNameParts.length > 1) {
-                    originalFileType = fileNameParts[fileNameParts.length - 1]; // Get the last part as the file extension
-                } else {
-                    throw new IllegalStateException("Invalid file name: no extension found in " + originalFilename);
-                }
-                logger.info("original file type " + originalFileType);
-
-                // Get an ImageReader for the format
-                ImageReader reader = ImageIO.getImageReadersByFormatName(originalFileType).next();
-                if (reader == null) {
-                    throw new IllegalStateException("No ImageReader found for format: " + originalFileType);
-                }
-
-                reader.setInput(iis, true);
-
-                // Check and get metadata
-                IIOMetadata metadata = reader.getImageMetadata(0);
-                if (metadata == null) {
-                    writer.write(null, new IIOImage(resizedImage, null, null), writeParam);
-                }else{
-                    writer.write(null, new IIOImage(resizedImage, null, metadata), writeParam);
-                }
-            }
+            // Write the image
+            writeImage(writer, resizedImage, writeParam, stripeMetadata, originalFile);
 
             // Flush and close the streams
             ios.flush();
@@ -114,15 +67,76 @@ public class ImageService {
 
             // Convert the ByteArrayOutputStream to byte[]
             byte[] processedImageData = baos.toByteArray();
-            baos.close(); // Close the ByteArrayOutputStream
-            logger.info("image format " + format.toUpperCase() + " conversion success!");
+            baos.close();
+
+            logger.info("Image format " + format.toUpperCase() + " conversion success!");
 
             return new ProcessedImage(newFileName, processedImageData);
 
-        } catch (IOException | UnsupportedOperationException e){
-            e.printStackTrace();
+        } catch (IIOException e) {
+            if (e.getMessage().contains("Missing Huffman code table entry")) {
+                logger.error("Encountered corrupt JPEG data: Missing Huffman code table entry", e);
+                // Return the original image without compression
+                return createProcessedImageFromOriginal(originalImage, originalFilename);
+            }
+            logger.error("Error during image compression", e);
+        } catch (IOException | UnsupportedOperationException e) {
+            logger.error("Error during image processing", e);
         }
+
+        // If any error occurs, return null or handle it as per your application's requirements
         return null;
+    }
+
+    private BufferedImage resizeImage(BufferedImage originalImage, int newWidth, int newHeight) {
+        BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
+        Graphics2D g2d = resizedImage.createGraphics();
+        g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+        g2d.dispose();
+        return resizedImage;
+    }
+
+    private void writeImage(ImageWriter writer, BufferedImage image, ImageWriteParam writeParam, boolean stripeMetadata, MultipartFile originalFile) throws IOException {
+        if (stripeMetadata) {
+            writer.write(null, new IIOImage(image, null, null), writeParam);
+        } else {
+            IIOMetadata metadata = getMetadata(originalFile);
+            writer.write(null, new IIOImage(image, null, metadata), writeParam);
+        }
+    }
+
+    private IIOMetadata getMetadata(MultipartFile originalFile) throws IOException {
+        try (InputStream inputStream = originalFile.getInputStream();
+             ImageInputStream iis = ImageIO.createImageInputStream(inputStream)) {
+            
+            if (iis == null) {
+                throw new IOException("ImageInputStream could not be created.");
+            }
+
+            String originalFileType = getFileExtension(originalFile.getOriginalFilename());
+            ImageReader reader = ImageIO.getImageReadersByFormatName(originalFileType).next();
+            if (reader == null) {
+                throw new IOException("No ImageReader found for format: " + originalFileType);
+            }
+
+            reader.setInput(iis, true);
+            return reader.getImageMetadata(0);
+        }
+    }
+
+    private String getFileExtension(String filename) {
+        return filename.substring(filename.lastIndexOf(".") + 1);
+    }
+
+    private ProcessedImage createProcessedImageFromOriginal(BufferedImage originalImage, String originalFilename) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(originalImage, getFileExtension(originalFilename), baos);
+            return new ProcessedImage(originalFilename, baos.toByteArray());
+        } catch (IOException e) {
+            logger.error("Error creating ProcessedImage from original", e);
+            return null;
+        }
     }
 
     private static ImageWriteParam getImageWriteParam(String format, ImageWriter writer, float quality) {

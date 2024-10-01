@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function() {
     // Document is ready
 
@@ -63,6 +62,149 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => console.error('Error fetching data:', error));
 });
+
+// Add these variables at the top of your script
+let applyToAllCheckbox = document.getElementById('applyToAll');
+let globalWidthInput = document.getElementById('globalWidth');
+let globalHeightInput = document.getElementById('globalHeight');
+
+// Add this function to handle checkbox change
+applyToAllCheckbox.addEventListener('change', function() {
+    globalWidthInput.style.display = this.checked ? 'inline-block' : 'none';
+    globalHeightInput.style.display = this.checked ? 'inline-block' : 'none';
+    if (!this.checked) {
+        globalWidthInput.value = '';
+        globalHeightInput.value = '';
+        // Reset all width and height inputs to their original values
+        resetDimensions();
+    }
+});
+
+// Add this function to handle global width input change
+globalWidthInput.addEventListener('input', function() {
+    if (applyToAllCheckbox.checked) {
+        let newWidth = parseInt(this.value);
+        if (isNaN(newWidth) || newWidth <= 0) return;
+        updateAllDimensions(newWidth, null);
+    }
+});
+
+// Add this function to handle global height input change
+globalHeightInput.addEventListener('input', function() {
+    if (applyToAllCheckbox.checked) {
+        let newHeight = parseInt(this.value);
+        if (isNaN(newHeight) || newHeight <= 0) return;
+        updateAllDimensions(null, newHeight);
+    }
+});
+
+// Function to update all dimensions
+function updateAllDimensions(newWidth, newHeight) {
+    const widthInputs = document.getElementsByName('width[]');
+    const heightInputs = document.querySelectorAll('[id^="height"]');
+
+    for (let i = 0; i < widthInputs.length; i++) {
+        const aspectRatio = parseFloat(widthInputs[i].dataset.aspectRatio);
+        if (newWidth) {
+            widthInputs[i].value = newWidth;
+            heightInputs[i].value = Math.round(newWidth / aspectRatio);
+        } else if (newHeight) {
+            heightInputs[i].value = newHeight;
+            widthInputs[i].value = Math.round(newHeight * aspectRatio);
+        }
+    }
+}
+
+// Function to reset dimensions to original values
+function resetDimensions() {
+    const widthInputs = document.getElementsByName('width[]');
+    const heightInputs = document.querySelectorAll('[id^="height"]');
+
+    for (let i = 0; i < widthInputs.length; i++) {
+        const originalWidth = widthInputs[i].placeholder.split(' ')[0];
+        widthInputs[i].value = originalWidth;
+        const aspectRatio = parseFloat(widthInputs[i].dataset.aspectRatio);
+        heightInputs[i].value = Math.round(originalWidth / aspectRatio);
+    }
+}
+
+// Modify the existing updateFileList function
+function updateFileList() {
+    const fileListElement = document.getElementById('fileList');
+    const files = document.getElementById('files').files;
+
+    // Clear existing table contents including header
+    fileListElement.innerHTML = '';
+
+    // Create table head and its row
+    const tableHead = document.createElement('thead');
+    const tableHeadRow = tableHead.insertRow();
+
+    // Insert the header cells and set their content
+    const headerCell1 = tableHeadRow.insertCell(0);
+    headerCell1.textContent = 'Filename';
+
+    const headerCell2 = tableHeadRow.insertCell(1);
+    headerCell2.textContent = 'Resized width (in pixels)';
+
+    const headerCell3 = tableHeadRow.insertCell(2);
+    headerCell3.textContent = 'Resized height (in pixels)';
+
+    // Append the table head to the table
+    fileListElement.appendChild(tableHead);
+
+    // Create table body and append after the header
+    const tableBody = document.createElement('tbody');
+    fileListElement.appendChild(tableBody);
+
+    if (files.length > 50) {
+        alert('You can only select up to 50 files.');
+        return;
+    }
+
+    for (let i = 0; i < files.length; i++) {
+        const row = tableBody.insertRow();
+        const cell1 = row.insertCell(0);
+        cell1.textContent = files[i].name;
+        const cell2 = row.insertCell(1);
+
+        const img = new Image();
+        img.src = URL.createObjectURL(files[i]);
+        img.onload = function() {
+            const aspectRatio = img.naturalWidth / img.naturalHeight;
+            console.log("width " + img.naturalWidth + " : " + img.naturalHeight);
+
+            // Insert width input field
+            cell2.innerHTML = `
+            <input type="number" class="form-control width-input" name="width[]" 
+                id="width${i}" placeholder="${img.naturalWidth} pixels" value="${img.naturalWidth}" data-aspect-ratio="${aspectRatio}">`;
+
+            // Create a new cell for the height input (not editable, just showing calculated height)
+            const cell3 = row.insertCell(2);
+            cell3.innerHTML = `
+            <input type="number" class="form-control" id="height${i}" value="${img.naturalHeight}" readonly>`;
+
+            // Add event listener to the width input to recalculate the height on change
+            const widthInput = document.getElementById(`width${i}`);
+            const heightInput = document.getElementById(`height${i}`);
+
+            widthInput.addEventListener('input', function () {
+                const newWidth = this.value;
+                const newHeight = Math.round(newWidth / aspectRatio);
+                heightInput.value = newHeight;
+            });
+
+            // Check if "Apply to all" is checked and update accordingly
+            if (applyToAllCheckbox.checked) {
+                const globalWidth = globalWidthInput.value;
+                if (globalWidth) {
+                    widthInput.value = globalWidth;
+                    heightInput.value = Math.round(globalWidth / aspectRatio);
+                }
+            }
+        };
+    }
+}
 
 function convertImage() {
 
@@ -208,73 +350,4 @@ function multiConversion(formData){
                 downloadDiv.removeChild(downloadLink);
             }})
         .catch(error => alert('Error converting image:' + error));
-}
-
-function updateFileList() {
-    const fileListElement = document.getElementById('fileList');
-    const files = document.getElementById('files').files;
-
-    // Clear existing table contents including header
-    fileListElement.innerHTML = '';
-
-    // Create table head and its row
-    const tableHead = document.createElement('thead');
-    const tableHeadRow = tableHead.insertRow();
-
-    // Insert the header cells and set their content
-    const headerCell1 = tableHeadRow.insertCell(0);
-    headerCell1.textContent = 'Filename';
-
-    const headerCell2 = tableHeadRow.insertCell(1);
-    headerCell2.textContent = 'Resized width (in pixels)';
-
-    const headerCell3 = tableHeadRow.insertCell(2);
-    headerCell3.textContent = 'Resized height (in pixels)';
-
-    // Append the table head to the table
-    fileListElement.appendChild(tableHead);
-
-    // Create table body and append after the header
-    const tableBody = document.createElement('tbody');
-    fileListElement.appendChild(tableBody);
-
-    if (files.length > 50) {
-        alert('You can only select up to 50 files.');
-        return;
-    }
-
-    for (let i = 0; i < files.length; i++) {
-        const row = tableBody.insertRow();
-        const cell1 = row.insertCell(0);
-        cell1.textContent = files[i].name;
-        const cell2 = row.insertCell(1);
-
-        const img = new Image();
-        img.src = URL.createObjectURL(files[i]);
-        img.onload = function() {
-
-            const aspectRatio = img.naturalWidth / img.naturalHeight;
-            console.log("width " + img.naturalWidth + " : " + img.naturalHeight);
-
-            // Insert width input field
-            cell2.innerHTML = `
-            <input type="number" class="form-control width-input" name="width[]" 
-                id="width${i}" placeholder="${img.naturalWidth} pixels" value="${img.naturalWidth}" data-aspect-ratio="${aspectRatio}">`;
-
-            // Create a new cell for the height input (not editable, just showing calculated height)
-            const cell3 = row.insertCell(2);
-            cell3.innerHTML = `
-            <input type="number" class="form-control" id="height${i}" value="${img.naturalHeight}" readonly>`;
-
-            // Add event listener to the width input to recalculate the height on change
-            const widthInput = document.getElementById(`width${i}`);
-            const heightInput = document.getElementById(`height${i}`);
-
-            widthInput.addEventListener('input', function () {
-                const newWidth = this.value;
-                const newHeight = Math.round(newWidth / aspectRatio);
-                heightInput.value = newHeight;
-            });
-        };
-    }
 }

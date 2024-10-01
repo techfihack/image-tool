@@ -20,18 +20,8 @@
 
     <form class="form-inline" action="/api/upload" method="post" enctype="multipart/form-data">
 
-        <!-- Format -->
-        <div class="row">
-            <div class="col-md-12">
-                <div class="form-group">
-                    <label class="form-label" for="imageFormats">Format : </label>
-                    <select class="form-control" id="imageFormats"></select>
-                </div>
-            </div>
-        </div>
-
         <!-- Files -->
-        <div class="row" >
+        <div class="row">
             <div class="col-md-12">
                 <div class="form-group file-upload-wrapper">
                     <label for="files" class="form-label file-upload-button">
@@ -42,10 +32,32 @@
             </div>
         </div>
 
+        <!-- Format (moved below file selection) -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label class="form-label" for="imageFormats">Format : </label>
+                    <select class="form-control" id="imageFormats"></select>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <table id="fileList">
                 <!-- Dynamically filled rows will go here -->
             </table>
+        </div>
+
+        <!-- Apply to all, Width, and Height inputs -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group apply-to-all-container">
+                    <input type="checkbox" id="applyToAll" name="applyToAll" class="apply-to-all-checkbox">
+                    <label for="applyToAll" class="apply-to-all-label">Apply to all</label>
+                    <input id="globalWidth" name="globalWidth" class="form-control" type="number" placeholder="Width" style="display: inline-block; width: 100px; margin-left: 10px;">
+                    <input id="globalHeight" name="globalHeight" class="form-control" type="number" placeholder="Height" style="display: inline-block; width: 100px; margin-left: 10px;">
+                </div>
+            </div>
         </div>
 
         <!-- Resize Height -->
@@ -118,5 +130,5 @@
         <p>Support us: <a href="https://www.buymeacoffee.com/dorashad0w" style="color: white;">Buy Me A Coffee</a></p>
     </div>
 </footer>
-
 <script src="./js/script.js" ></script>
+
