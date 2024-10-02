@@ -10,13 +10,11 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.*;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
-import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,76 +26,41 @@ public class ImageService {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageService.class);
 
-    public ProcessedImage compressImg(BufferedImage originalImage, MultipartFile originalFile, String originalFilename, Integer targetWidth, Integer compressQuality, String format, boolean stripeMetadata) {
-        int newWidth = targetWidth != null ? targetWidth : originalImage.getWidth();
-        float quality = compressQuality != null ? (float) (compressQuality / 100.00) : 0.1f;
+    public ProcessedImage compressImg(BufferedImage originalImage, MultipartFile file, String filename, int width, int compressQuality, String format, boolean stripMetadata) throws IOException {
+        // Resize the image
+        BufferedImage resizedImage = resizeImage(originalImage, width);
 
-        double aspectRatio = (double) originalImage.getWidth() / originalImage.getHeight();
-        int newHeight = (int) (newWidth / aspectRatio);
+        // Compress the image
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageWriter writer = ImageIO.getImageWritersByFormatName(format).next();
+        ImageWriteParam writeParam = getImageWriteParam(format, writer, compressQuality / 100.0f);
+        writer.setOutput(ImageIO.createImageOutputStream(baos));
+        writeImage(writer, resizedImage, writeParam, stripMetadata, file);
+        writer.dispose();
 
-        try {
-            if (quality <= 0 || quality > 1) {
-                throw new IOException("Please select compress quality from range 0 to 1");
-            }
-
-            // Resize the image
-            BufferedImage resizedImage = resizeImage(originalImage, newWidth, newHeight);
-
-            // Get an ImageWriter for the specified format
-            ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/" + format).next();
-
-            // Create and configure the ImageWriteParam based on the format
-            ImageWriteParam writeParam = getImageWriteParam(format, writer, quality);
-
-            // Set new filename
-            String newFileName = changeFileName(originalFilename, format);
-
-            // Use ByteArrayOutputStream for in-memory processing
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
-            writer.setOutput(ios);
-
-            // Write the image
-            writeImage(writer, resizedImage, writeParam, stripeMetadata, originalFile);
-
-            // Flush and close the streams
-            ios.flush();
-            writer.dispose();
-            ios.close();
-
-            // Convert the ByteArrayOutputStream to byte[]
-            byte[] processedImageData = baos.toByteArray();
-            baos.close();
-
-            logger.info("Image format " + format.toUpperCase() + " conversion success!");
-
-            return new ProcessedImage(newFileName, processedImageData);
-
-        } catch (IIOException e) {
-            if (e.getMessage().contains("Missing Huffman code table entry")) {
-                logger.error("Encountered corrupt JPEG data: Missing Huffman code table entry", e);
-                // Return the original image without compression
-                return createProcessedImageFromOriginal(originalImage, originalFilename);
-            }
-            logger.error("Error during image compression", e);
-        } catch (IOException | UnsupportedOperationException e) {
-            logger.error("Error during image processing", e);
-        }
-
-        // If any error occurs, return null or handle it as per your application's requirements
-        return null;
+        // Return the processed image
+        return new ProcessedImage(filename, baos.toByteArray());
     }
 
-    private BufferedImage resizeImage(BufferedImage originalImage, int newWidth, int newHeight) {
-        BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = resizedImage.createGraphics();
-        g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
-        g2d.dispose();
+    private BufferedImage resizeImage(BufferedImage originalImage, int width) {
+        int height = (int) (originalImage.getHeight() * (width / (double) originalImage.getWidth()));
+        BufferedImage resizedImage = new BufferedImage(width, height, originalImage.getType());
+        resizedImage.getGraphics().drawImage(originalImage, 0, 0, width, height, null);
         return resizedImage;
     }
 
-    private void writeImage(ImageWriter writer, BufferedImage image, ImageWriteParam writeParam, boolean stripeMetadata, MultipartFile originalFile) throws IOException {
-        if (stripeMetadata) {
+    public List<ProcessedImage> compressImgs(List<BufferedImage> originalImages, List<MultipartFile> files, List<String> filenames, List<Integer> widths, int compressQuality, String format, boolean stripMetadata) throws IOException {
+        // Process each image
+        List<ProcessedImage> processedImages = new ArrayList<>();
+        for (int i = 0; i < originalImages.size(); i++) {
+            ProcessedImage processedImage = compressImg(originalImages.get(i), files.get(i), filenames.get(i), widths.get(i), compressQuality, format, stripMetadata);
+            processedImages.add(processedImage);
+        }
+        return processedImages;
+    }
+
+    private void writeImage(ImageWriter writer, BufferedImage image, ImageWriteParam writeParam, boolean stripMetadata, MultipartFile originalFile) throws IOException {
+        if (stripMetadata) {
             writer.write(null, new IIOImage(image, null, null), writeParam);
         } else {
             IIOMetadata metadata = getMetadata(originalFile);

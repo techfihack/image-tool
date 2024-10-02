@@ -137,14 +137,115 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btn-convert-image').addEventListener('click', convertImage);
 });
 
+
 function convertImage() {
-    // Your existing convertImage function code
+    // Disable the button to prevent multiple submissions
+    document.getElementById('btn-convert-image').disabled = true;
+
+    // Get form values
+    const format = document.getElementById('imageFormats').value;
+    const compressQuality = document.getElementById('compressQuality').value;
+    const filesInput = document.getElementById('files');
+    const stripMetadata = document.getElementById('stripMetadata').checked;
+
+    // Create a FormData object to send form data
+    const formData = new FormData();
+    formData.append('format', format);
+    formData.append('compressQuality', compressQuality);
+    formData.append('stripMetadata', stripMetadata);
+
+    // Append files to FormData
+    for (const file of filesInput.files) {
+        formData.append('files', file);
+    }
+
+    // Get all elements with the name 'widths[]'
+    const widthInputs = document.querySelectorAll('input[name^="width_"]');
+
+    // Loop through the NodeList and append values to FormData
+    widthInputs.forEach((widthInput, index) => {
+        const width = widthInput.value;
+        formData.append('widths[]', width);
+    });
+
+    // Determine which API to call based on the number of files selected
+    if (filesInput.files.length > 1) {
+        multiConversion(formData);
+    } else {
+        singleConversion(formData);
+    }
+
+    // Re-enable the button after 10 seconds
+    setTimeout(() => {
+        document.getElementById('btn-convert-image').disabled = false;
+    }, 10000); // 10 seconds
 }
 
+
 function singleConversion(formData) {
-    // Your existing singleConversion function code
+    // Make a request to /api/image/uploadSingle
+    fetch('/api/image/uploadSingle', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Image conversion failed');
+        }
+        return response.blob();
+    })
+    .then(blobData => {
+        const imageUrl = URL.createObjectURL(blobData);
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = ''; // Clear previous content
+
+        const img = document.createElement('img');
+        img.src = imageUrl;
+
+        const downloadLink = document.createElement('a');
+        downloadLink.href = imageUrl;
+        downloadLink.download = 'processed-image.' + formData.get('format');
+
+        img.addEventListener('dblclick', function() {
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        });
+
+        resultDiv.appendChild(img);
+        const span = document.createElement('span');
+        span.innerHTML = "Double click to download the image";
+        span.style.color = "red";
+        span.style.fontSize = "12px";
+        span.style.marginTop = "5px";
+        span.style.marginLeft = "auto";
+        span.style.marginRight = "auto";
+        resultDiv.appendChild(span);
+    })
+    .catch(error => alert('Error converting image: ' + error));
 }
 
 function multiConversion(formData) {
-    // Your existing multiConversion function code
+    // Make a request to /api/image/uploadMulti
+    fetch('/api/image/uploadMulti', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Image conversion failed');
+        }
+        return response.arrayBuffer();
+    })
+    .then(data => {
+        const blob = new Blob([data], { type: 'application/zip' });
+        const downloadDiv = document.getElementById('downloadDiv');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = 'processed_images.zip';
+        downloadDiv.appendChild(downloadLink);
+        downloadLink.click();
+        downloadDiv.removeChild(downloadLink);
+    })
+    .catch(error => alert('Error converting image: ' + error));
 }
