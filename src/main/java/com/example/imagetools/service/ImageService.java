@@ -39,7 +39,7 @@ public class ImageService {
         writer.dispose();
 
         // Return the processed image
-        return new ProcessedImage(filename, baos.toByteArray());
+        return new ProcessedImage(changeFileName(filename, format), baos.toByteArray());
     }
 
     private BufferedImage resizeImage(BufferedImage originalImage, int width) {

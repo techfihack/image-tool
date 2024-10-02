@@ -142,10 +142,9 @@ function convertImage() {
     // Disable the button to prevent multiple submissions
     document.getElementById('btn-convert-image').disabled = true;
 
-    // Get form values
+    const filesInput = document.getElementById('files');
     const format = document.getElementById('imageFormats').value;
     const compressQuality = document.getElementById('compressQuality').value;
-    const filesInput = document.getElementById('files');
     const stripMetadata = document.getElementById('stripMetadata').checked;
 
     // Create a FormData object to send form data
