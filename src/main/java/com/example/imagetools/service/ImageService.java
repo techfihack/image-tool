@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.*;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,23 +28,68 @@ public class ImageService {
     private static final Logger logger = LoggerFactory.getLogger(ImageService.class);
 
     public ProcessedImage compressImg(BufferedImage originalImage, MultipartFile file, String filename, int width, int compressQuality, String format, boolean stripMetadata) throws IOException {
-        // Resize the image
-        BufferedImage resizedImage = resizeImage(originalImage, width);
+        logger.info("Starting image compression for file: {}", filename);
 
-        // Compress the image
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageWriter writer = ImageIO.getImageWritersByFormatName(format).next();
-        ImageWriteParam writeParam = getImageWriteParam(format, writer, compressQuality / 100.0f);
-        writer.setOutput(ImageIO.createImageOutputStream(baos));
-        writeImage(writer, resizedImage, writeParam, stripMetadata, file);
-        writer.dispose();
+        int newWidth = width != 0 ? width : originalImage.getWidth();
+        float quality = compressQuality != 0 ? (float) (compressQuality / 100.00) : 0.1f;
 
-        // Return the processed image
-        return new ProcessedImage(changeFileName(filename, format), baos.toByteArray());
+        double aspectRatio = (double) originalImage.getWidth() / originalImage.getHeight();
+        int newHeight = (int) (newWidth / aspectRatio);
+
+        try {
+            if (quality <= 0 || quality > 1) {
+                throw new IOException("Please select compress quality from range 0 to 1");
+            }
+
+            // Resize the image
+            BufferedImage resizedImage = resizeImage(originalImage, newWidth, newHeight);
+
+            // Get an ImageWriter for the specified format
+            ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/" + format).next();
+
+            // Create and configure the ImageWriteParam based on the format
+            ImageWriteParam writeParam = getImageWriteParam(format, writer, quality);
+
+            // Set new filename
+            String newFileName = changeFileName(filename, format);
+
+            // Use ByteArrayOutputStream for in-memory processing
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
+            writer.setOutput(ios);
+
+            // Write the image
+            writeImage(writer, resizedImage, writeParam, stripMetadata, file);
+
+            // Flush and close the streams
+            ios.flush();
+            writer.dispose();
+            ios.close();
+
+            // Convert the ByteArrayOutputStream to byte[]
+            byte[] processedImageData = baos.toByteArray();
+            baos.close();
+
+            logger.info("Image format " + format.toUpperCase() + " conversion success!");
+
+            return new ProcessedImage(newFileName, processedImageData);
+
+        } catch (IIOException e) {
+            if (e.getMessage().contains("Missing Huffman code table entry")) {
+                logger.error("Encountered corrupt JPEG data: Missing Huffman code table entry", e);
+                // Return the original image without compression
+                return createProcessedImageFromOriginal(originalImage, filename);
+            }
+            logger.error("Error during image compression", e);
+        } catch (IOException | UnsupportedOperationException e) {
+            logger.error("Error during image processing", e);
+        }
+
+        // If any error occurs, return null or handle it as per your application's requirements
+        return null;
     }
 
-    private BufferedImage resizeImage(BufferedImage originalImage, int width) {
-        int height = (int) (originalImage.getHeight() * (width / (double) originalImage.getWidth()));
+    private BufferedImage resizeImage(BufferedImage originalImage, int width, int height) {
         BufferedImage resizedImage = new BufferedImage(width, height, originalImage.getType());
         resizedImage.getGraphics().drawImage(originalImage, 0, 0, width, height, null);
         return resizedImage;
