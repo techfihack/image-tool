@@ -30,15 +30,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add these variables at the top of your script
     let applyToAllCheckbox = document.getElementById('applyToAll');
     let globalWidthInput = document.getElementById('globalWidth');
-    let globalHeightInput = document.getElementById('globalHeight');
 
     // Add this function to handle checkbox change
     applyToAllCheckbox.addEventListener('change', function() {
         globalWidthInput.style.display = this.checked ? 'inline-block' : 'none';
-        globalHeightInput.style.display = this.checked ? 'inline-block' : 'none';
         if (!this.checked) {
             globalWidthInput.value = '';
-            globalHeightInput.value = '';
             // Reset all width and height inputs to their original values
             resetDimensions();
         }
@@ -49,38 +46,33 @@ document.addEventListener('DOMContentLoaded', function() {
         if (applyToAllCheckbox.checked) {
             let newWidth = parseInt(this.value);
             if (isNaN(newWidth) || newWidth <= 0) return;
-            updateAllDimensions(newWidth, null);
+            updateAllDimensions(newWidth);
         }
     });
 
     // Function to update all dimensions
-    function updateAllDimensions(newWidth, newHeight) {
-        const widthInputs = document.getElementsByName('width[]');
-        const heightInputs = document.querySelectorAll('[id^="height"]');
+    function updateAllDimensions(newWidth) {
+        const widthInputs = document.querySelectorAll('input[name^="width_"]');
+        const heightInputs = document.querySelectorAll('input[name^="height_"]');
 
-        for (let i = 0; i < widthInputs.length; i++) {
-            const aspectRatio = parseFloat(widthInputs[i].dataset.aspectRatio);
-            if (newWidth) {
-                widthInputs[i].value = newWidth;
-                heightInputs[i].value = Math.round(newWidth / aspectRatio);
-            } else if (newHeight) {
-                heightInputs[i].value = newHeight;
-                widthInputs[i].value = Math.round(newHeight * aspectRatio);
-            }
-        }
+        widthInputs.forEach((widthInput, index) => {
+            const aspectRatio = parseFloat(widthInput.dataset.aspectRatio);
+            widthInput.value = newWidth;
+            heightInputs[index].value = Math.round(newWidth / aspectRatio);
+        });
     }
 
     // Function to reset dimensions to original values
     function resetDimensions() {
-        const widthInputs = document.getElementsByName('width[]');
-        const heightInputs = document.querySelectorAll('[id^="height"]');
+        const widthInputs = document.querySelectorAll('input[name^="width_"]');
+        const heightInputs = document.querySelectorAll('input[name^="height_"]');
 
-        for (let i = 0; i < widthInputs.length; i++) {
-            const originalWidth = widthInputs[i].placeholder.split(' ')[0];
-            widthInputs[i].value = originalWidth;
-            const aspectRatio = parseFloat(widthInputs[i].dataset.aspectRatio);
-            heightInputs[i].value = Math.round(originalWidth / aspectRatio);
-        }
+        widthInputs.forEach((widthInput, index) => {
+            const originalWidth = widthInput.placeholder.split(' ')[0];
+            widthInput.value = originalWidth;
+            const aspectRatio = parseFloat(widthInput.dataset.aspectRatio);
+            heightInputs[index].value = Math.round(originalWidth / aspectRatio);
+        });
     }
 
     // Function to update the file list and preview images
@@ -130,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log("Image dimensions:", img.width, img.height); // Debugging log
                     widthInput.value = img.width;
                     heightInput.value = img.height;
+                    widthInput.dataset.aspectRatio = img.width / img.height;
                 };
                 img.src = e.target.result;
             };
