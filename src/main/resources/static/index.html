@@ -11,6 +11,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" type="image/jpg" sizes="16x16" href="./image/cat.jpg">
     <link rel="stylesheet" href="./style/style.css">
+    <style>
+        /* Adjust column widths */
+        #fileList th:nth-child(1), #fileList td:nth-child(1) { width: 40%; }
+        #fileList th:nth-child(2), #fileList td:nth-child(2) { width: 30%; }
+        #fileList th:nth-child(3), #fileList td:nth-child(3) { width: 30%; }
+    </style>
 </head>
 <body>
 
@@ -27,7 +33,7 @@
                     <label for="files" class="form-label file-upload-button">
                         Choose Files (Maximum 50 files)
                     </label>
-                    <input class="form-control file-upload-input" id="files" type="file" name="files" accept="image/*" multiple onchange="updateFileList()">
+                    <input class="form-control file-upload-input" id="files" type="file" name="files" accept="image/*" multiple>
                 </div>
             </div>
         </div>
@@ -44,7 +50,16 @@
 
         <div class="row mb-2">
             <table id="fileList" class="table table-bordered">
-                <!-- Dynamically filled rows will go here -->
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Resized (width in pixel)</th>
+                        <th>Resized (height in pixel)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dynamically filled rows will go here -->
+                </tbody>
             </table>
         </div>
 
@@ -118,3 +133,4 @@
     </div>
 </footer>
 <script src="./js/script.js" ></script>
+</html>
