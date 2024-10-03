@@ -23,13 +23,13 @@ h3 {
     text-align: center;
 }
 .row {
-    margin-top:10px;
+    margin-top: 5px; /* Reduced margin for better spacing */
 }
 .my-container {
-    margin-top:50px;
-    margin-left:auto;
-    margin-right:auto;
-    margin-bottom:100px;
+    margin-top: 30px; /* Reduced top margin */
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 50px; /* Reduced bottom margin */
     max-width: 800px;
     font-size: 14px;
 
@@ -55,7 +55,7 @@ h3 {
     border: 1px solid #ced4da;
     border-radius: 4px;
     box-sizing: border-box;
-    margin-bottom: 16px;
+    margin-bottom: 8px; /* Reduced margin for tighter spacing */
 }
 .submit-button {
     background-color: #28a745;
@@ -73,8 +73,8 @@ h3 {
 #compressQuality {
     width: 100%;
     appearance: none;
-    margin-top:5px;
-    margin-bottom:5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
     height: 10px;
     background-color: #ddd;
     border-radius: 5px;
@@ -246,7 +246,7 @@ input[type="number"] {
 .strip-metadata-container {
     display: flex;
     align-items: center;
-    margin-top: 10px;
+    margin-top: 5px; /* Reduced margin for better spacing */
 }
 
 .strip-metadata-checkbox {
@@ -372,4 +372,21 @@ input[type="number"] {
     font-weight: bold;
     cursor: pointer;
     margin-left: 10px;
+}
+
+/* Example styles for the new table structure */
+#fileList th:nth-child(1), #fileList td:nth-child(1) {
+    width: 30%; /* Adjusted width for filename */
+}
+
+#fileList th:nth-child(2), #fileList td:nth-child(2) {
+    width: 30%; /* Adjusted width for preview */
+}
+
+#fileList th:nth-child(3), #fileList td:nth-child(3) {
+    width: 20%; /* Adjusted width for current width */
+}
+
+#fileList th:nth-child(4), #fileList td:nth-child(4) {
+    width: 20%; /* Adjusted width for current height */
 }

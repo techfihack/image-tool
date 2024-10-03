@@ -86,18 +86,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = files[i];
             const row = fileList.insertRow();
 
-            // Filename column with preview
-            const filenameCell = row.insertCell(0);
+            // Preview column
+            const previewCell = row.insertCell(0);
             const img = document.createElement('img');
             img.src = URL.createObjectURL(file);
             img.style.width = '50px';
             img.style.height = '50px';
             img.style.marginRight = '10px';
-            filenameCell.appendChild(img);
+            previewCell.appendChild(img);
+
+            // Filename column
+            const filenameCell = row.insertCell(1);
             filenameCell.appendChild(document.createTextNode(file.name));
 
             // Resized (width in pixel) column
-            const widthCell = row.insertCell(1);
+            const widthCell = row.insertCell(2);
             const widthInput = document.createElement('input');
             widthInput.type = 'number';
             widthInput.className = 'form-control';
@@ -106,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
             widthCell.appendChild(widthInput);
 
             // Resized (height in pixel) column
-            const heightCell = row.insertCell(2);
+            const heightCell = row.insertCell(3);
             const heightInput = document.createElement('input');
             heightInput.type = 'number';
             heightInput.className = 'form-control';
@@ -247,4 +250,19 @@ function multiConversion(formData) {
         downloadDiv.removeChild(downloadLink);
     })
     .catch(error => alert('Error converting image: ' + error));
+}
+
+// Assuming there's a function to add rows to the table
+function addFileRow(filename, width, height, previewSrc) {
+    const tableBody = document.querySelector('#fileList tbody');
+    const row = document.createElement('tr');
+
+    row.innerHTML = `
+        <td><img src="${previewSrc}" alt="Preview" width="100"></td> <!-- Add preview image -->
+        <td>${filename}</td>
+        <td>${width}</td>
+        <td>${height}</td>
+    `;
+
+    tableBody.appendChild(row);
 }

@@ -13,9 +13,10 @@
     <link rel="stylesheet" href="./style/style.css">
     <style>
         /* Adjust column widths */
-        #fileList th:nth-child(1), #fileList td:nth-child(1) { width: 40%; }
-        #fileList th:nth-child(2), #fileList td:nth-child(2) { width: 30%; }
-        #fileList th:nth-child(3), #fileList td:nth-child(3) { width: 30%; }
+        #fileList th:nth-child(1), #fileList td:nth-child(1) { width: 20%; } /* Adjusted width for preview */
+        #fileList th:nth-child(2), #fileList td:nth-child(2) { width: 30%; } /* Adjusted width for filename */
+        #fileList th:nth-child(3), #fileList td:nth-child(3) { width: 25%; } /* Adjusted width for current width */
+        #fileList th:nth-child(4), #fileList td:nth-child(4) { width: 25%; } /* Adjusted width for current height */
     </style>
 </head>
 <body>
@@ -48,23 +49,8 @@
             </div>
         </div>
 
+        <!-- Apply To All and Strip Metadata checkboxes moved above the table -->
         <div class="row mb-2">
-            <table id="fileList" class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Filename</th>
-                        <th>Current Width (px)</th>
-                        <th>Current Height (px)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Dynamically filled rows will go here -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Apply To All, Width input -->
-        <div class="row mb-3">
             <div class="col-md-12">
                 <div class="form-group apply-to-all-container">
                     <input type="checkbox" id="applyToAll" name="applyToAll" class="apply-to-all-checkbox">
@@ -74,8 +60,17 @@
             </div>
         </div>
 
+        <div class="row mb-2">
+            <div class="col-md-12">
+                <div class="form-group strip-metadata-container">
+                    <input type="checkbox" id="stripMetadata" name="stripMetadata" class="strip-metadata-checkbox">
+                    <label for="stripMetadata" class="strip-metadata-label">Strip Metadata</label>
+                </div>
+            </div>
+        </div>
+
         <!-- Compress Ratio -->
-        <div class="row mb-3">
+        <div class="row mb-4"> <!-- Increased bottom margin for spacing -->
             <div class="col-md-12">
                 <div class="form-group">
                     <label class="form-label label-compress-quality" for="compressQuality">Compress Ratio (%) : </label>
@@ -85,14 +80,20 @@
             </div>
         </div>
 
-        <!-- Strip Metadata Option -->
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <div class="form-group strip-metadata-container">
-                    <input type="checkbox" id="stripMetadata" name="stripMetadata" class="strip-metadata-checkbox">
-                    <label for="stripMetadata" class="strip-metadata-label">Strip Metadata</label>
-                </div>
-            </div>
+        <div class="row mb-4"> <!-- Increased top margin for spacing -->
+            <table id="fileList" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Preview</th>
+                        <th>Filename</th>
+                        <th>Current Width (px)</th>
+                        <th>Current Height (px)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dynamically filled rows will go here -->
+                </tbody>
+            </table>
         </div>
 
         <div class="row mb-3">
@@ -119,6 +120,7 @@
         data-font-color="#ffffff"
         data-coffee-color="#FFDD00" >
 </script>
+<script src="./js/script.js" ></script>
 </body>
 
 <footer style="background-color: #333; color: white; text-align: center; padding: 20px 0; position: relative; bottom: 0; width: 100%;">
@@ -132,5 +134,4 @@
         <p>Support us: <a href="https://www.buymeacoffee.com/dorashad0w" style="color: white;">Buy Me A Coffee</a></p>
     </div>
 </footer>
-<script src="./js/script.js" ></script>
 </html>
